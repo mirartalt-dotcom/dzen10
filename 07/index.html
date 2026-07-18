@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>Дуэль страданий — DZEN</title>
+<style>
+  :root{
+    --paper:#F4F1EA; --zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F;
+    --line:#DFDACE; --card:#FBFAF6;
+    --lime:#A8C96B; --lime-d:#56732E; --lime-l:#ECF0DD;
+    --terra:#C0563E; --terra-d:#8A3A28; --terra-l:#F4E3DD;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --spring:cubic-bezier(.34,1.42,.5,1);
+    --r:24px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;
+    min-height:100dvh; display:flex; flex-direction:column; align-items:center;
+    font-size:17px; line-height:1.45;
+  }
+  .brand{
+    position:fixed; top:14px; right:18px; z-index:5;
+    font-size:12px; letter-spacing:.22em; color:var(--muted); font-weight:600;
+    user-select:none; pointer-events:none;
+  }
+  .wrap{width:100%; max-width:520px; padding:56px 20px 40px; flex:1; display:flex; flex-direction:column}
+
+  /* ---------- screens ---------- */
+  .screen{display:none; flex:1; flex-direction:column}
+  .screen.on{display:flex; animation:rise .55s var(--spring) both}
+  @keyframes rise{from{opacity:0; transform:translateY(22px) scale(.985)} to{opacity:1; transform:none}}
+
+  .eyebrow{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-weight:600; margin-bottom:14px}
+  h1{font-size:clamp(38px,10vw,52px); line-height:1.04; letter-spacing:-.02em; font-weight:800}
+  .sub{color:var(--muted); font-size:17px; margin-top:14px; max-width:34ch}
+
+  .field{margin-top:30px}
+  .field label{display:block; font-size:13px; color:var(--muted); margin-bottom:8px}
+  input[type=text]{
+    width:100%; padding:16px 18px; font-size:18px; color:var(--ink);
+    background:var(--card); border:1.5px solid var(--line); border-radius:18px;
+    outline:none; font-family:inherit; transition:border-color .25s var(--ease);
+  }
+  input[type=text]:focus{border-color:var(--ink)}
+  ::placeholder{color:#B7B2A4}
+
+  .btn{
+    display:block; width:100%; padding:18px 22px; margin-top:14px;
+    font-size:18px; font-weight:700; font-family:inherit; letter-spacing:-.01em;
+    border:none; border-radius:20px; cursor:pointer;
+    background:var(--ink); color:var(--paper);
+    transition:transform .35s var(--spring), opacity .2s;
+  }
+  .btn:active{transform:scale(.965)}
+  .btn.terra{background:var(--terra); color:#FFF8F5}
+  .btn.ghost{background:transparent; color:var(--muted); border:1.5px solid var(--line); font-weight:600}
+  .btn:focus-visible, .opt:focus-visible, input:focus-visible{outline:2px solid var(--lime-d); outline-offset:2px}
+
+  details.codebox{margin-top:26px; border-top:1px solid var(--line); padding-top:16px}
+  details.codebox summary{
+    list-style:none; cursor:pointer; color:var(--muted); font-size:15px; font-weight:600;
+  }
+  details.codebox summary::-webkit-details-marker{display:none}
+  details.codebox summary::after{content:" ↓"; color:#B7B2A4}
+  details.codebox[open] summary::after{content:" ↑"}
+  .code-row{display:flex; gap:8px; margin-top:12px}
+  .code-row input{flex:1; font-size:15px}
+  .code-row .btn{width:auto; margin:0; padding:14px 18px; font-size:15px; border-radius:16px}
+  .code-err{color:var(--terra-d); font-size:14px; margin-top:8px; display:none}
+
+  .intro-history{margin-top:auto; padding-top:28px; font-size:14px; color:var(--muted)}
+  .intro-history b{color:var(--ink)}
+
+  /* ---------- challenge screen ---------- */
+  .chal-card{
+    background:var(--card); border:1.5px solid var(--line); border-radius:var(--r);
+    padding:30px 24px; text-align:center; margin-top:26px;
+  }
+  .chal-name{font-size:15px; color:var(--muted); font-weight:600; letter-spacing:.06em}
+  .chal-score{font-size:clamp(72px,24vw,104px); font-weight:800; letter-spacing:-.04em; color:var(--terra); line-height:1}
+  .chal-score small{font-size:.32em; color:var(--muted); font-weight:600; letter-spacing:0}
+  .chal-line{margin-top:8px; font-size:18px; font-weight:700}
+
+  /* ---------- quiz ---------- */
+  .quiz-top{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .qnum{font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.08em}
+  .pain-chip{
+    display:flex; align-items:baseline; gap:6px;
+    background:var(--terra-l); color:var(--terra-d);
+    border-radius:100px; padding:7px 14px; font-weight:700; font-size:14px;
+    transition:transform .4s var(--spring);
+  }
+  .pain-chip b{font-size:19px; letter-spacing:-.02em}
+  .pain-chip.pop{transform:scale(1.14)}
+  .track{height:4px; background:var(--line); border-radius:99px; margin-top:14px; overflow:hidden}
+  .fill{height:100%; width:0%; background:var(--terra); border-radius:99px; transition:width .6s var(--spring)}
+
+  .teaser{
+    margin-top:12px; font-size:13px; color:var(--muted);
+    filter:blur(3px); opacity:0; transition:opacity .6s var(--ease);
+    user-select:none;
+  }
+  .teaser.show{opacity:.85}
+
+  #qcard{margin-top:26px; transition:opacity .22s var(--ease), transform .22s var(--ease)}
+  #qcard.out{opacity:0; transform:translateX(-26px)}
+  #qcard.in{animation:qin .5s var(--spring) both}
+  @keyframes qin{from{opacity:0; transform:translateX(30px)} to{opacity:1; transform:none}}
+  .qtitle{font-size:clamp(26px,7vw,32px); font-weight:800; letter-spacing:-.02em; line-height:1.12}
+  .opts{margin-top:22px; display:flex; flex-direction:column; gap:10px}
+  .opt{
+    width:100%; text-align:left; cursor:pointer; font-family:inherit;
+    background:var(--card); border:1.5px solid var(--line); border-radius:20px;
+    padding:15px 18px; color:var(--ink);
+    transition:transform .35s var(--spring), border-color .2s, background .2s;
+  }
+  .opt:active{transform:scale(.97); border-color:var(--terra); background:var(--terra-l)}
+  .opt .t{font-size:16.5px; font-weight:650; display:block; line-height:1.3}
+  .opt .d{font-size:13.5px; color:var(--muted); display:block; margin-top:3px; line-height:1.35}
+
+  /* ---------- calc ---------- */
+  #s-calc{justify-content:center; align-items:center; text-align:center}
+  .calc-text{color:var(--muted); font-size:17px; animation:pulse 1.4s var(--ease) infinite}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  .calc-dot{font-size:64px; line-height:1; margin-bottom:18px; animation:spin 1.4s var(--ease) infinite}
+  @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+  /* ---------- result ---------- */
+  .stage{opacity:0; transform:translateY(26px) scale(.98); transition:opacity .6s var(--ease), transform .6s var(--spring)}
+  .stage.reveal{opacity:1; transform:none}
+
+  .res-card{
+    background:var(--card); border:1.5px solid var(--line); border-radius:28px;
+    padding:28px 24px 22px; text-align:center;
+  }
+  .res-eyebrow{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); font-weight:600}
+  .res-name{margin-top:6px; font-size:17px; font-weight:700}
+  .res-score{
+    font-size:clamp(96px,32vw,136px); font-weight:800; letter-spacing:-.05em;
+    line-height:1; color:var(--terra); margin-top:6px;
+  }
+  .res-of{font-size:15px; color:var(--muted); font-weight:600; margin-top:2px}
+  .res-rank{margin-top:18px; display:inline-block; background:var(--terra-l); color:var(--terra-d);
+    border-radius:100px; padding:9px 18px; font-weight:800; font-size:16px}
+  .res-rankline{margin-top:12px; color:var(--muted); font-size:15px; max-width:32ch; margin-left:auto; margin-right:auto}
+  .res-url{margin-top:20px; padding-top:14px; border-top:1px solid var(--line);
+    font-size:11.5px; letter-spacing:.14em; color:#B7B2A4; text-transform:uppercase; font-weight:600}
+
+  /* duel compare */
+  .duel-wrap{margin-top:14px}
+  .duel-grid{display:flex; gap:10px}
+  .duel-col{
+    flex:1; background:var(--card); border:1.5px solid var(--line); border-radius:22px;
+    padding:18px 12px 16px; text-align:center; position:relative;
+  }
+  .duel-col.win{border-color:var(--terra); background:var(--terra-l)}
+  .duel-col .crown{
+    position:absolute; top:-11px; left:50%; transform:translateX(-50%);
+    background:var(--terra); color:#FFF8F5; font-size:10.5px; font-weight:700;
+    letter-spacing:.08em; border-radius:99px; padding:4px 10px; white-space:nowrap;
+  }
+  .duel-col .dn{font-size:13.5px; font-weight:700; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .duel-col .ds{font-size:44px; font-weight:800; letter-spacing:-.03em; color:var(--terra); line-height:1.1; margin-top:4px}
+  .duel-col .dj{font-size:12.5px; color:var(--lime-d); font-weight:700; margin-top:6px}
+  .duel-verdict{margin-top:14px; font-size:15.5px; line-height:1.5}
+  .duel-verdict .joyline{color:var(--lime-d); font-weight:650; margin-top:6px; display:block}
+
+  /* dzen flip */
+  .flip{
+    margin-top:14px; background:var(--zen); border-radius:28px; padding:28px 24px;
+    text-align:center; border:1.5px solid #E2E7D2;
+  }
+  .flip-eyebrow{font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--lime-d); font-weight:700}
+  .flip h2{font-size:clamp(24px,6.6vw,30px); font-weight:800; letter-spacing:-.02em; margin-top:10px; line-height:1.15}
+  .flip .flip-sub{color:var(--muted); font-size:15px; margin-top:10px; max-width:32ch; margin-left:auto; margin-right:auto}
+  .flip .facts{margin-top:14px; font-size:13.5px; color:var(--lime-d); font-weight:650; letter-spacing:.01em}
+  .flip .tagline{margin-top:16px; font-weight:800; font-size:17px; color:var(--ink)}
+
+  .can{width:88px; height:158px; margin:22px auto 4px; position:relative; filter:drop-shadow(0 14px 22px rgba(86,115,46,.25))}
+  .can-lid{
+    position:absolute; top:0; left:6px; right:6px; height:14px;
+    background:linear-gradient(180deg,#E8E6DE,#C9C6BB); border-radius:50% / 100% 100% 40% 40%;
+    z-index:2;
+  }
+  .can-lid::after{content:""; position:absolute; left:50%; top:4px; transform:translateX(-50%);
+    width:18px; height:7px; border-radius:99px; background:#AFACA1}
+  .can-body{
+    position:absolute; top:8px; bottom:0; left:0; right:0;
+    background:linear-gradient(160deg,#BCD787 0%, var(--lime) 45%, #8DB350 100%);
+    border-radius:16px 16px 18px 18px;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .can-body::before{content:""; position:absolute; top:0; bottom:0; left:12%;
+    width:14%; background:linear-gradient(90deg,rgba(255,255,255,.5),rgba(255,255,255,0)); border-radius:99px}
+  .can-body span{
+    writing-mode:vertical-rl; transform:rotate(180deg);
+    color:#FDFFF6; font-weight:800; font-size:30px; letter-spacing:.34em; user-select:none;
+  }
+
+  /* actions / code / history */
+  .actions{margin-top:14px}
+  .mycode{
+    margin-top:12px; background:var(--card); border:1.5px dashed var(--line); border-radius:18px;
+    padding:13px 16px; text-align:center; cursor:pointer;
+    transition:transform .35s var(--spring);
+  }
+  .mycode:active{transform:scale(.97)}
+  .mycode .lbl{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:.06em}
+  .mycode .val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; margin-top:4px;
+    word-break:break-all; color:var(--ink)}
+  .mycode .hint{font-size:11.5px; color:#B7B2A4; margin-top:4px}
+
+  .history{margin-top:14px; background:var(--card); border:1.5px solid var(--line); border-radius:22px; padding:20px}
+  .history h3{font-size:14px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700}
+  .history .sum{font-size:15px; margin-top:10px; font-weight:650}
+  .history ul{list-style:none; margin-top:12px}
+  .history li{
+    display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    padding:9px 0; border-top:1px solid var(--line); font-size:15px;
+  }
+  .history li .vs{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .history li .sc{font-weight:800; color:var(--terra); white-space:nowrap}
+  .history li .sc.lose{color:var(--muted)}
+
+  .toast{
+    position:fixed; bottom:26px; left:50%; transform:translate(-50%,80px);
+    background:var(--ink); color:var(--paper); font-size:15px; font-weight:600;
+    border-radius:99px; padding:12px 22px; z-index:20; opacity:0; pointer-events:none;
+    transition:transform .5s var(--spring), opacity .3s var(--ease);
+    max-width:86vw; text-align:center;
+  }
+  .toast.show{transform:translate(-50%,0); opacity:1}
+
+  @media (min-width:600px){ .wrap{padding-top:72px} }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<div class="brand" aria-hidden="true">DZEN</div>
+<div class="wrap">
+
+  <!-- INTRO -->
+  <section class="screen" id="s-intro">
+    <div class="eyebrow">дуэль страданий</div>
+    <h1>Спорим,<br>у тебя хуже?</h1>
+    <p class="sub">60 секунд — и узнаешь, кто из вас страдает красивее. Ради здоровья, разумеется.</p>
+    <div class="field">
+      <label for="name-in">Имя дуэлянта</label>
+      <input type="text" id="name-in" maxlength="24" placeholder="Как тебя объявить" autocomplete="off">
+    </div>
+    <button class="btn" id="btn-start">Начать дуэль</button>
+    <details class="codebox">
+      <summary>Тебя вызвали? Вставь код друга</summary>
+      <div class="code-row">
+        <input type="text" id="code-in" placeholder="Код или ссылка" autocomplete="off">
+        <button class="btn" id="btn-code">Ок</button>
+      </div>
+      <div class="code-err" id="code-err">Код не читается. Попроси друга прислать ещё раз.</div>
+    </details>
+    <div class="intro-history" id="intro-history"></div>
+  </section>
+
+  <!-- CHALLENGE -->
+  <section class="screen" id="s-challenge">
+    <div class="eyebrow">тебя вызвали на дуэль</div>
+    <div class="chal-card">
+      <div class="chal-name" id="chal-name"></div>
+      <div class="chal-score"><span id="chal-score">0</span><small> / 100 страданий</small></div>
+      <div class="chal-line">Твой ход.</div>
+    </div>
+    <div class="field">
+      <label for="name-in2">Имя дуэлянта</label>
+      <input type="text" id="name-in2" maxlength="24" placeholder="Как тебя объявить" autocomplete="off">
+    </div>
+    <button class="btn terra" id="btn-accept">Принять дуэль</button>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="screen" id="s-quiz">
+    <div class="quiz-top">
+      <div class="qnum" id="qnum">Вопрос 1 из 5</div>
+      <div class="pain-chip" id="pain-chip"><span>страданий</span><b id="pain-now">0</b></div>
+    </div>
+    <div class="track"><div class="fill" id="qfill"></div></div>
+    <div class="teaser" id="teaser">звание уже считается…</div>
+    <div id="qcard"></div>
+  </section>
+
+  <!-- CALC -->
+  <section class="screen" id="s-calc">
+    <div class="calc-dot">◐</div>
+    <p class="calc-text">Считаем твои подвиги…</p>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="s-result">
+    <div class="stage" id="st-score">
+      <div class="res-card">
+        <div class="res-eyebrow">дуэль страданий · счёт</div>
+        <div class="res-name" id="res-name"></div>
+        <div class="res-score" id="res-score">0</div>
+        <div class="res-of">из 100 страданий</div>
+        <div class="res-rank" id="res-rank"></div>
+        <div class="res-rankline" id="res-rankline"></div>
+        <div class="res-url">DZEN · спорим, у тебя хуже?</div>
+      </div>
+    </div>
+
+    <div class="stage duel-wrap" id="st-duel" hidden>
+      <div class="duel-grid" id="duel-grid"></div>
+      <div class="duel-verdict" id="duel-verdict"></div>
+    </div>
+
+    <div class="stage" id="st-flip">
+      <div class="flip">
+        <div class="flip-eyebrow">переворот</div>
+        <h2 id="flip-title">Тот же счёт пользы —<br>без страданий</h2>
+        <p class="flip-sub" id="flip-sub"></p>
+        <div class="can" aria-hidden="true">
+          <div class="can-lid"></div>
+          <div class="can-body"><span>DZEN</span></div>
+        </div>
+        <div class="facts">3 вида пребиотика · ≈4 г клетчатки · 0 г сахара</div>
+        <div class="tagline">Польза, которую не надо терпеть.</div>
+      </div>
+    </div>
+
+    <div class="stage actions" id="st-actions">
+      <button class="btn terra" id="btn-share">Вызвать на дуэль</button>
+      <div class="mycode" id="mycode" role="button" tabindex="0">
+        <div class="lbl">твой код дуэли</div>
+        <div class="val" id="mycode-val"></div>
+        <div class="hint">нажми — скопируется, если ссылка потеряется</div>
+      </div>
+      <button class="btn ghost" id="btn-again">Пройти ещё раз</button>
+    </div>
+
+    <div class="stage history" id="st-history" hidden>
+      <h3>Твои дуэли</h3>
+      <div class="sum" id="hist-sum"></div>
+      <ul id="hist-list"></ul>
+    </div>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- data ---------- */
+var QUESTIONS = [
+  { q:'Вчера вечером ты…', opts:[
+    {t:'Лёг до 23:00', d:'второй сезон сам себя не досмотрит. Пусть.', p:20, j:4},
+    {t:'Держался до полуночи. Почти', d:'будильник уже осуждал', p:12, j:8},
+    {t:'«Последняя серия» — три серии назад', d:'', p:5, j:14},
+    {t:'Сон — для тех, у кого закончилась лента', d:'', p:0, j:17}
+  ]},
+  { q:'Сладкое к чаю?', opts:[
+    {t:'Не взял', d:'печенье грустно на тебя смотрело. Ты выдержал.', p:20, j:3},
+    {t:'Одно. Ладно, два. Всё, стоп', d:'', p:11, j:10},
+    {t:'Чай — это соус к десерту', d:'', p:4, j:15},
+    {t:'Не пью чай без сладкого. Я не монстр', d:'', p:0, j:18}
+  ]},
+  { q:'Зал на этой неделе?', opts:[
+    {t:'Ходил. Через лень', d:'диван считал тебя своим. Зря.', p:20, j:5},
+    {t:'Один раз. Неделю этим горжусь', d:'', p:12, j:9},
+    {t:'Абонемент есть. Тренируется без меня', d:'', p:5, j:8},
+    {t:'Моё кардио — лестница, когда лифт сломан', d:'', p:0, j:14}
+  ]},
+  { q:'Телефон перед сном?', opts:[
+    {t:'Убрал за час до сна', d:'сидел и смотрел в стену. Полезно.', p:20, j:3},
+    {t:'Поставил лимит. Продлил. Дважды', d:'', p:11, j:10},
+    {t:'Зашёл на минутку — вышел через час', d:'', p:5, j:13},
+    {t:'Лента закончилась раньше, чем я', d:'', p:0, j:16}
+  ]},
+  { q:'Корзина на вайлдберриз?', opts:[
+    {t:'Закрыл и не купил', d:'а там уже лежала твоя новая жизнь', p:20, j:2},
+    {t:'Удалил половину. Герой наполовину', d:'', p:12, j:9},
+    {t:'Купил, но по акции — считай, сэкономил', d:'', p:5, j:15},
+    {t:'Курьер здоровается со мной по имени', d:'', p:0, j:17}
+  ]}
+];
+
+var RANKS = [
+  {min:0,  name:'Мирный житель',            line:'Пока ты просто живёшь. Ни пользы, ни боли.'},
+  {min:16, name:'Лёгкий мученик',           line:'Здоровье кивнуло, диван обиделся.'},
+  {min:36, name:'Подвижник по будням',      line:'Оплачено силой воли, сдачи не будет.'},
+  {min:56, name:'Гроссмейстер терпения',    line:'Три подвига за день. Почти святой — только злой и голодный.'},
+  {min:76, name:'Почти святой',             line:'Нимб уже светится, терпение уже мигает.'},
+  {min:91, name:'Чемпион страданий',        line:'Пять из пяти. Идеальный человек — и абсолютно вымотанный.'}
+];
+
+var LS_HIST = 'dzen_duel_history';
+var LS_NAME = 'dzen_duel_name';
+
+/* ---------- state ---------- */
+var state = { name:'', i:0, pain:0, joy:0, opp:null, saved:false };
+var reduced = false;
+try { reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+
+/* ---------- helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function buzz(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+var toastTimer = null;
+function toast(msg){
+  var t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+}
+
+function show(id){
+  var scr = document.querySelectorAll('.screen');
+  for (var k=0;k<scr.length;k++) scr[k].classList.remove('on');
+  var el = $(id);
+  el.classList.add('on');
+  window.scrollTo(0,0);
+}
+
+function countUp(el, to, dur){
+  if (reduced){ el.textContent = to; return; }
+  var t0 = null;
+  function step(t){
+    if (t0 === null) t0 = t;
+    var k = Math.min(1, (t - t0) / dur);
+    var e = 1 - Math.pow(1 - k, 3);
+    el.textContent = Math.round(to * e);
+    if (k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ---------- tiny sounds (WebAudio, no files) ---------- */
+var AC = null;
+function ac(){
+  if (!AC){
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ AC = null; }
+  }
+  if (AC && AC.state === 'suspended'){ try{ AC.resume(); }catch(e){} }
+  return AC;
+}
+function sndClick(){
+  var a = ac(); if (!a) return;
+  try{
+    var o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.value = 1050;
+    g.gain.setValueAtTime(0.05, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + 0.06);
+    o.connect(g); g.connect(a.destination);
+    o.start(); o.stop(a.currentTime + 0.07);
+  }catch(e){}
+}
+function sndPshh(){
+  var a = ac(); if (!a) return;
+  try{
+    var len = Math.floor(a.sampleRate * 0.5);
+    var buf = a.createBuffer(1, len, a.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 1.6);
+    var src = a.createBufferSource(); src.buffer = buf;
+    var f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 5200; f.Q.value = 0.7;
+    var g = a.createGain(); g.gain.value = 0.11;
+    src.connect(f); f.connect(g); g.connect(a.destination);
+    src.start();
+  }catch(e){}
+}
+
+/* ---------- unicode-safe base64url codes ---------- */
+function encodeCode(obj){
+  try{
+    var json = JSON.stringify(obj);
+    var bytes = new TextEncoder().encode(json);
+    var bin = '';
+    for (var i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }catch(e){ return ''; }
+}
+function decodeCode(str){
+  try{
+    var s = String(str).trim().replace(/-/g,'+').replace(/_/g,'/');
+    while (s.length % 4) s += '=';
+    var bin = atob(s);
+    var bytes = new Uint8Array(bin.length);
+    for (var i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    var o = JSON.parse(new TextDecoder().decode(bytes));
+    if (!o || typeof o.n !== 'string' || typeof o.s !== 'number') return null;
+    return {
+      n: (o.n.slice(0,24).trim() || 'Инкогнито'),
+      s: clamp(Math.round(o.s), 0, 100),
+      j: clamp(Math.round(o.j || 0), 0, 100)
+    };
+  }catch(e){ return null; }
+}
+function extractCode(text){
+  var t = String(text || '').trim();
+  var m = t.match(/[#?&]d=([A-Za-z0-9\-_]+)/);
+  if (m) return m[1];
+  return t.replace(/[^A-Za-z0-9\-_]/g, '');
+}
+function baseUrl(){
+  return location.href.split('#')[0];
+}
+
+/* ---------- history (localStorage) ---------- */
+function loadHist(){
+  try{
+    var h = JSON.parse(localStorage.getItem(LS_HIST) || '[]');
+    return Array.isArray(h) ? h : [];
+  }catch(e){ return []; }
+}
+function saveDuel(entry){
+  try{
+    var h = loadHist();
+    h.unshift(entry);
+    if (h.length > 30) h = h.slice(0, 30);
+    localStorage.setItem(LS_HIST, JSON.stringify(h));
+  }catch(e){}
+}
+
+/* ---------- intro ---------- */
+function renderIntroHistory(){
+  var box = $('intro-history');
+  var h = loadHist();
+  box.textContent = '';
+  if (!h.length) return;
+  var wins = 0;
+  for (var i=0;i<h.length;i++) if (h[i].ms > h[i].os) wins++;
+  var b = document.createElement('b');
+  b.textContent = wins + ' из ' + h.length;
+  box.appendChild(document.createTextNode('В коллекции дуэлей: '));
+  box.appendChild(b);
+  box.appendChild(document.createTextNode(' побед по страданиям. Есть кого вызвать ещё?'));
+}
+
+function getName(inputId){
+  var v = ($(inputId).value || '').trim().slice(0,24);
+  if (!v) v = 'Инкогнито';
+  try{ localStorage.setItem(LS_NAME, v); }catch(e){}
+  return v;
+}
+
+/* ---------- quiz ---------- */
+function startQuiz(name){
+  state.name = name;
+  state.i = 0; state.pain = 0; state.joy = 0; state.saved = false;
+  $('pain-now').textContent = '0';
+  $('teaser').classList.remove('show');
+  show('s-quiz');
+  renderQ(false);
+}
+
+function renderQ(animate){
+  var q = QUESTIONS[state.i];
+  $('qnum').textContent = 'Вопрос ' + (state.i + 1) + ' из ' + QUESTIONS.length;
+  $('qfill').style.width = ((state.i) / QUESTIONS.length * 100) + '%';
+
+  var card = $('qcard');
+  card.className = '';
+  card.textContent = '';
+
+  var h = document.createElement('div');
+  h.className = 'qtitle';
+  h.textContent = q.q;
+  card.appendChild(h);
+
+  var box = document.createElement('div');
+  box.className = 'opts';
+  q.opts.forEach(function(opt, idx){
+    var b = document.createElement('button');
+    b.className = 'opt';
+    b.type = 'button';
+    var t = document.createElement('span');
+    t.className = 't';
+    t.textContent = opt.t;
+    b.appendChild(t);
+    if (opt.d){
+      var d = document.createElement('span');
+      d.className = 'd';
+      d.textContent = opt.d;
+      b.appendChild(d);
+    }
+    b.addEventListener('click', function(){ answer(idx); });
+    box.appendChild(b);
+  });
+  card.appendChild(box);
+
+  if (animate && !reduced) card.classList.add('in');
+}
+
+function answer(idx){
+  var opt = QUESTIONS[state.i].opts[idx];
+  state.pain += opt.p;
+  state.joy += opt.j;
+  buzz(12);
+  sndClick();
+
+  var chip = $('pain-chip');
+  $('pain-now').textContent = state.pain;
+  chip.classList.add('pop');
+  setTimeout(function(){ chip.classList.remove('pop'); }, 380);
+
+  if (state.i === 1) $('teaser').classList.add('show');
+
+  var card = $('qcard');
+  card.classList.add('out');
+  var delay = reduced ? 0 : 230;
+  setTimeout(function(){
+    state.i++;
+    if (state.i < QUESTIONS.length){
+      renderQ(true);
+    } else {
+      $('qfill').style.width = '100%';
+      finish();
+    }
+  }, delay);
+}
+
+function finish(){
+  state.pain = clamp(state.pain, 0, 100);
+  state.joy = clamp(state.joy, 0, 100);
+  show('s-calc');
+  setTimeout(showResult, reduced ? 200 : 1400);
+}
+
+/* ---------- result ---------- */
+function rankFor(score){
+  var r = RANKS[0];
+  for (var i=0;i<RANKS.length;i++) if (score >= RANKS[i].min) r = RANKS[i];
+  return r;
+}
+
+function myCode(){
+  return encodeCode({ n: state.name, s: state.pain, j: state.joy });
+}
+function shareText(){
+  return 'Я набрал ' + state.pain + '/100 страданий — «' + rankFor(state.pain).name +
+    '». Спорим, у тебя хуже? ' + baseUrl() + '#d=' + myCode();
+}
+
+function showResult(){
+  show('s-result');
+  buzz([10,30,20]);
+
+  var r = rankFor(state.pain);
+  $('res-name').textContent = state.name;
+  $('res-rank').textContent = r.name;
+  $('res-rankline').textContent = r.line;
+
+  var isDuel = !!state.opp;
+  $('st-duel').hidden = !isDuel;
+  if (isDuel) renderDuel();
+
+  $('flip-sub').textContent = 'Твои ' + state.pain + ' очков терпения можно было не платить. ' +
+    'DZEN — единственная кнопка, где за пользу платят удовольствием.';
+
+  $('btn-share').textContent = isDuel ? 'Вызвать следующего' : 'Вызвать на дуэль';
+  $('mycode-val').textContent = myCode();
+
+  renderHistory();
+
+  var order = ['st-score','st-duel','st-flip','st-actions','st-history'];
+  var delay = 0;
+  order.forEach(function(id){
+    var el = $(id);
+    if (el.hidden) return;
+    setTimeout(function(){
+      el.classList.add('reveal');
+      if (id === 'st-score') countUp($('res-score'), state.pain, 1300);
+      if (id === 'st-flip') sndPshh();
+    }, reduced ? 0 : delay);
+    delay += 750;
+  });
+}
+
+function renderDuel(){
+  var grid = $('duel-grid');
+  grid.textContent = '';
+  var me = { n: state.name, s: state.pain, j: state.joy };
+  var op = state.opp;
+  var iWin = me.s > op.s;
+  var tie = me.s === op.s;
+
+  [me, op].forEach(function(p){
+    var col = document.createElement('div');
+    col.className = 'duel-col';
+    var winner = !tie && ((p === me && iWin) || (p === op && !iWin));
+    if (winner){
+      col.classList.add('win');
+      var c = document.createElement('div');
+      c.className = 'crown';
+      c.textContent = 'страдает красивее';
+      col.appendChild(c);
+    }
+    var dn = document.createElement('div');
+    dn.className = 'dn';
+    dn.textContent = (p === me) ? 'ты' : p.n;
+    col.appendChild(dn);
+    var ds = document.createElement('div');
+    ds.className = 'ds';
+    ds.textContent = p.s;
+    col.appendChild(ds);
+    var dj = document.createElement('div');
+    dj.className = 'dj';
+    dj.textContent = 'кайф: ' + p.j;
+    col.appendChild(dj);
+    grid.appendChild(col);
+  });
+
+  var v = $('duel-verdict');
+  v.textContent = '';
+  var line1;
+  if (tie){
+    line1 = 'Ничья, ' + me.s + ':' + op.s + '. Страдаете одинаково красиво. Даже трогательно.';
+  } else if (iWin){
+    line1 = 'Ты победил в страданиях — на ' + (me.s - op.s) + ' очков чистого терпения. Приз сомнительный, но твой.';
+  } else {
+    line1 = op.n + ' страдает красивее — на ' + (op.s - me.s) + ' очков. Ты проиграл. Поздравляем.';
+  }
+  v.appendChild(document.createTextNode(line1));
+
+  var joyLine = document.createElement('span');
+  joyLine.className = 'joyline';
+  if (me.j === op.j){
+    joyLine.textContent = 'А кайфа у вас поровну. Обоим — по банке DZEN.';
+  } else {
+    var joyWinner = me.j > op.j ? 'у тебя' : ('у ' + op.n);
+    joyLine.textContent = 'Зато кайфа больше ' + joyWinner + '. Вот это уже похоже на победу.';
+  }
+  v.appendChild(joyLine);
+
+  if (!state.saved){
+    state.saved = true;
+    saveDuel({ me: me.n, opp: op.n, ms: me.s, os: op.s, mj: me.j, oj: op.j, t: Date.now() });
+  }
+}
+
+function renderHistory(){
+  var h = loadHist();
+  var box = $('st-history');
+  if (!h.length){ box.hidden = true; return; }
+  box.hidden = false;
+
+  var wins = 0;
+  for (var i=0;i<h.length;i++) if (h[i].ms > h[i].os) wins++;
+  $('hist-sum').textContent = 'Побед по страданиям: ' + wins + ' из ' + h.length +
+    '. Коллекция растёт — есть кого вызвать ещё.';
+
+  var list = $('hist-list');
+  list.textContent = '';
+  h.slice(0, 8).forEach(function(d){
+    var li = document.createElement('li');
+    var vs = document.createElement('span');
+    vs.className = 'vs';
+    vs.textContent = 'ты vs ' + d.opp;
+    var sc = document.createElement('span');
+    sc.className = 'sc' + (d.ms > d.os ? '' : ' lose');
+    sc.textContent = d.ms + ' – ' + d.os;
+    li.appendChild(vs);
+    li.appendChild(sc);
+    list.appendChild(li);
+  });
+}
+
+/* ---------- share / copy ---------- */
+function copyText(text, okMsg){
+  function fallback(){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast(okMsg);
+    }catch(e){ toast('Не получилось скопировать'); }
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ toast(okMsg); }, fallback);
+  } else fallback();
+}
+
+function doShare(){
+  buzz(12);
+  var text = shareText();
+  if (navigator.share){
+    navigator.share({ text: text }).catch(function(err){
+      if (err && err.name === 'AbortError') return;
+      copyText(text, 'Скопировано — кидай другу');
+    });
+  } else {
+    copyText(text, 'Скопировано — кидай другу');
+  }
+}
+
+/* ---------- accept code ---------- */
+function tryAcceptCode(raw){
+  var code = extractCode(raw);
+  var opp = code ? decodeCode(code) : null;
+  if (!opp) return false;
+  state.opp = opp;
+  showChallenge();
+  return true;
+}
+
+function showChallenge(){
+  $('chal-name').textContent = state.opp.n;
+  var savedName = '';
+  try{ savedName = localStorage.getItem(LS_NAME) || ''; }catch(e){}
+  $('name-in2').value = savedName;
+  show('s-challenge');
+  countUp($('chal-score'), state.opp.s, 1100);
+}
+
+function resetAll(){
+  state.opp = null;
+  state.saved = false;
+  try{
+    if (location.hash){
+      if (history.replaceState) history.replaceState(null, '', baseUrl());
+      else location.hash = '';
+    }
+  }catch(e){}
+  var stages = document.querySelectorAll('.stage');
+  for (var i=0;i<stages.length;i++) stages[i].classList.remove('reveal');
+  var savedName = '';
+  try{ savedName = localStorage.getItem(LS_NAME) || ''; }catch(e){}
+  $('name-in').value = savedName;
+  renderIntroHistory();
+  show('s-intro');
+}
+
+/* ---------- wire up ---------- */
+$('btn-start').addEventListener('click', function(){
+  buzz(12); sndClick();
+  startQuiz(getName('name-in'));
+});
+$('name-in').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') $('btn-start').click();
+});
+
+$('btn-accept').addEventListener('click', function(){
+  buzz(12); sndClick();
+  startQuiz(getName('name-in2'));
+});
+$('name-in2').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') $('btn-accept').click();
+});
+
+$('btn-code').addEventListener('click', function(){
+  var ok = tryAcceptCode($('code-in').value);
+  $('code-err').style.display = ok ? 'none' : 'block';
+  if (ok){ buzz(12); sndClick(); }
+});
+
+$('btn-share').addEventListener('click', doShare);
+
+$('mycode').addEventListener('click', function(){
+  copyText(myCode(), 'Код скопирован');
+});
+$('mycode').addEventListener('keydown', function(e){
+  if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); copyText(myCode(), 'Код скопирован'); }
+});
+
+$('btn-again').addEventListener('click', function(){
+  buzz(12);
+  resetAll();
+});
+
+/* ---------- boot ---------- */
+(function boot(){
+  var savedName = '';
+  try{ savedName = localStorage.getItem(LS_NAME) || ''; }catch(e){}
+  $('name-in').value = savedName;
+  renderIntroHistory();
+
+  var m = (location.hash || '').match(/[#&]d=([A-Za-z0-9\-_]+)/);
+  var opp = m ? decodeCode(m[1]) : null;
+  if (opp){
+    state.opp = opp;
+    showChallenge();
+  } else {
+    show('s-intro');
+  }
+})();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F4F1EA">
+<title>Калькулятор страданий — 10 концептов</title>
+<style>
+  :root{
+    --paper:#F4F1EA; --ink:#2B2A26; --muted:#6E6A5F; --line:#DFDACE; --card:#FBFAF6;
+    --lime:#A8C96B; --lime-dark:#56732E; --lime-soft:#ECF0DD;
+    --pain:#C0563E; --pain-soft:#F4E3DD;
+    --mango:#C2791B; --grape:#7A5C93;
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,'Segoe UI',Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased; padding:48px 20px 80px;
+  }
+  .wrap{max-width:680px;margin:0 auto}
+  .kicker{font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--lime-dark)}
+  h1{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:10px 0 8px}
+  .sub{color:var(--muted);font-size:16px;line-height:1.5;max-width:54ch}
+  .hint{margin:18px 0 34px;padding:14px 16px;background:var(--lime-soft);border-radius:16px;font-size:14px;line-height:1.5;color:var(--lime-dark)}
+  .grid{display:grid;gap:14px}
+  a.card{
+    display:block;text-decoration:none;color:inherit;background:var(--card);
+    border:1px solid var(--line);border-radius:20px;padding:20px 22px;
+    transition:transform .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  a.card:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(43,42,38,.08)}
+  .row{display:flex;align-items:baseline;gap:12px}
+  .num{font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.08em;min-width:24px}
+  .name{font-size:20px;font-weight:800;letter-spacing:-.01em}
+  .path{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-left:auto;white-space:nowrap}
+  .desc{margin-top:8px;color:var(--muted);font-size:14.5px;line-height:1.55}
+  .tags{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font-size:12px;font-weight:700;padding:5px 11px;border-radius:99px}
+  .t-share{background:var(--lime-soft);color:var(--lime-dark)}
+  .t-return{background:var(--pain-soft);color:var(--pain)}
+  footer{margin-top:44px;color:var(--muted);font-size:13px;line-height:1.6}
+  .p1{color:var(--mango)} .p2{color:var(--grape)} .p3{color:var(--lime-dark)}
+  @media(max-width:480px){h1{font-size:28px}.path{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">DZEN · Версия 8.0</div>
+  <h1>Калькулятор страданий — 10 концептов</h1>
+  <p class="sub">Десять непохожих путей к одной цели: зашёл — кайфанул — поделился — вернулся. Каждый сайт — отдельная механика вовлечения. Открывай, тыкай, отмечай, что цепляет.</p>
+  <div class="hint">Смотреть лучше с телефона или в узком окне браузера (~390px) — все версии собраны mobile-first, как будто человек пришёл по QR-коду с банки. Работают офлайн, интернет не нужен.</div>
+
+  <div class="grid">
+    <a class="card" href="01/">
+      <div class="row"><span class="num">01</span><span class="name">Сторис</span><span class="path p1">путь Spotify Wrapped</span></div>
+      <div class="desc">Полноэкранные карточки, тапаешь как сторис. Каскад результата: шок-цифра → твой персонаж → «ты страдаешь сильнее, чем N%» → переворот DZEN.</div>
+      <div class="tags"><span class="tag t-share">шеринг: карточка-персонаж + вызов</span><span class="tag t-return">возврат: «пересчитаем?» с дельтой</span></div>
+    </a>
+    <a class="card" href="02/">
+      <div class="row"><span class="num">02</span><span class="name">Диалог</span><span class="path p2">чат с внутренним голосом</span></div>
+      <div class="desc">Переписка с ироничным внутренним голосом: отвечаешь готовыми репликами, он колко комментирует, в конце подводит счёт и предлагает способ проще.</div>
+      <div class="tags"><span class="tag t-share">шеринг: выжимка переписки</span><span class="tag t-return">возврат: голос помнит тебя</span></div>
+    </a>
+    <a class="card" href="03/">
+      <div class="row"><span class="num">03</span><span class="name">Пульт</span><span class="path p3">живая машина</span></div>
+      <div class="desc">Пять больших слайдеров — и гора страданий, которая перестраивается на каждое движение. Игрушка, от которой сложно оторваться. Тумблер DZEN перекрашивает всё.</div>
+      <div class="tags"><span class="tag t-share">шеринг: карточка с твоей горой</span><span class="tag t-return">возврат: «что изменилось за неделю?»</span></div>
+    </a>
+    <a class="card" href="04/">
+      <div class="row"><span class="num">04</span><span class="name">Один день</span><span class="path p1">скролл-кино, стиль Apple</span></div>
+      <div class="desc">День идеального ЗОЖника по часам: 06:30 подъём → 22:55 сон. В каждой сцене выбор «подвиг или слабость», три концовки. Скролл управляет историей.</div>
+      <div class="tags"><span class="tag t-share">шеринг: итог дня + эмодзи-грид</span><span class="tag t-return">возврат: открой все 3 концовки</span></div>
+    </a>
+    <a class="card" href="05/">
+      <div class="row"><span class="num">05</span><span class="name">Весы</span><span class="path p2">физическая игрушка</span></div>
+      <div class="desc">Аптечные весы с настоящей пружинной физикой. Кладёшь гирьки-привычки на чашу страданий — а одна банка DZEN перевешивает всю гору. Мораль показана физикой.</div>
+      <div class="tags"><span class="tag t-share">шеринг: «полароид» твоих весов</span><span class="tag t-return">возврат: завтра гирьки весят иначе</span></div>
+    </a>
+    <a class="card" href="06/">
+      <div class="row"><span class="num">06</span><span class="name">Замер дня</span><span class="path p3">путь Wordle</span></div>
+      <div class="desc">Ежедневный минутный ритуал: 5 вопросов про вчера, индекс дня, серия замеров с огоньком. Один замер в сутки — дальше таймер до полуночи.</div>
+      <div class="tags"><span class="tag t-share">шеринг: эмодзи-код без спойлера</span><span class="tag t-return">возврат: стрик, который жалко терять</span></div>
+    </a>
+    <a class="card" href="07/">
+      <div class="row"><span class="num">07</span><span class="name">Дуэль</span><span class="path p1">«Спорим, у тебя хуже?»</span></div>
+      <div class="desc">Проходишь минутный тест — получаешь счёт и ссылку-вызов. Друг открывает её, видит «Артур: 68. Твой ход» — и проходит против тебя. Экран сравнения двоих.</div>
+      <div class="tags"><span class="tag t-share">шеринг: ссылка-вызов = сама механика</span><span class="tag t-return">возврат: коллекция побед в дуэлях</span></div>
+    </a>
+    <a class="card" href="08/">
+      <div class="row"><span class="num">08</span><span class="name">Чек</span><span class="path p2">касса здоровья</span></div>
+      <div class="desc">Пробиваешь привычки на кассе — печатается чек: «Отказ от печенья — оплачено силой воли. Сдачи не будет». Кнопка «Оплатить иначе» аннулирует страдания.</div>
+      <div class="tags"><span class="tag t-share">шеринг: чек — идеальный скриншот</span><span class="tag t-return">возврат: чек дня со сравнением «вчера/сегодня»</span></div>
+    </a>
+    <a class="card" href="09/">
+      <div class="row"><span class="num">09</span><span class="name">Внутренний ты</span><span class="path p3">живой персонаж</span></div>
+      <div class="desc">Персонаж с двумя шкалами: привычки делают его здоровее — но грустнее. Нимб и улыбка через силу на 5/5. И только DZEN даёт и здоровье, и искреннюю улыбку.</div>
+      <div class="tags"><span class="tag t-share">шеринг: карточка «мой внутренний»</span><span class="tag t-return">возврат: он помнит, как жил без тебя</span></div>
+    </a>
+    <a class="card" href="10/">
+      <div class="row"><span class="num">10</span><span class="name">Кто ты</span><span class="path p1">путь 16personalities</span></div>
+      <div class="desc">Тест на тип страдальца: 8 персонажей от «Святого и злого» до «Монаха с корзиной WB». Барнум-описание, редкость типа, заклятый друг — и тизер 9-го типа.</div>
+      <div class="tags"><span class="tag t-share">шеринг: карточка типа + спор «кто какой»</span><span class="tag t-return">возврат: тип меняется, пересдай</span></div>
+    </a>
+  </div>
+
+  <footer>
+    Все 10 работают офлайн одним файлом, без интернета и внешних сервисов.<br>
+    Общая основа: канон 5 привычек, палитра «бумага/лайм/терракот», тон DZEN, финал «Польза, которую не надо терпеть».
+  </footer>
+</div>
+</body>
+</html>

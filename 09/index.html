@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>Твой внутренний ты — DZEN</title>
+<style>
+  :root{
+    --paper:#F4F1EA; --paper-zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F;
+    --line:#DFDACE; --card:#FBFAF6;
+    --lime:#A8C96B; --lime-dark:#56732E; --lime-light:#ECF0DD;
+    --terra:#C0563E; --terra-dark:#8A3A28; --terra-light:#F4E3DD;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --spring:cubic-bezier(.34,1.42,.5,1);
+    --r:24px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;
+    background:var(--paper); color:var(--ink);
+    transition:background 1.4s var(--ease);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body.zen{background:var(--paper-zen)}
+  .wrap{max-width:560px;margin:0 auto;padding:18px 18px 56px}
+
+  /* ---------- шапка ---------- */
+  header{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 18px}
+  .mark{font-size:13px;font-weight:700;letter-spacing:.22em;color:var(--muted)}
+  .mark b{color:var(--lime-dark)}
+  .hint{font-size:12px;color:var(--muted)}
+  h1{font-size:27px;line-height:1.18;font-weight:700;letter-spacing:-.02em;margin:2px 2px 8px}
+  .sub{font-size:15px;color:var(--muted);line-height:1.45;margin:0 2px 22px}
+
+  /* ---------- сцена с персонажем ---------- */
+  .stage{
+    position:relative;background:var(--card);border:1px solid var(--line);
+    border-radius:28px;padding:14px 16px 10px;overflow:hidden;
+    transition:background 1.4s var(--ease);
+  }
+  body.zen .stage{background:#FCFCF5}
+  .meters{display:flex;gap:10px;margin-bottom:4px}
+  .meter{flex:1;background:transparent}
+  .meter .m-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .meter .m-name{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .meter .m-val{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+  .meter .m-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+  .meter .m-fill{height:100%;width:0%;border-radius:3px;transition:none}
+  #healthFill{background:linear-gradient(90deg,var(--lime),var(--lime-dark))}
+  #moodFill{background:linear-gradient(90deg,var(--terra),#D9A25B)}
+  #moodFill.happy{background:linear-gradient(90deg,#D9A25B,var(--lime))}
+
+  .char-holder{display:flex;justify-content:center;padding:2px 0 0}
+  #charSvg{width:min(300px,72vw);height:auto;display:block}
+
+  .say{
+    min-height:44px;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-size:15px;line-height:1.4;color:var(--ink);padding:6px 8px 12px;
+    transition:opacity .35s var(--ease), transform .35s var(--spring);
+  }
+  .say.swap{opacity:0;transform:translateY(6px)}
+  .say em{font-style:normal;color:var(--muted)}
+
+  .bubble{
+    position:absolute;bottom:12%;border-radius:50%;
+    background:radial-gradient(circle at 32% 30%,rgba(255,255,255,.95),rgba(168,201,107,.35));
+    border:1px solid rgba(86,115,46,.25);pointer-events:none;
+    animation:rise 2.6s var(--ease) forwards;
+  }
+  @keyframes rise{
+    0%{transform:translateY(0) scale(.5);opacity:0}
+    12%{opacity:.9}
+    100%{transform:translateY(-340px) scale(1.08);opacity:0}
+  }
+
+  /* ---------- привычки ---------- */
+  .habits{margin-top:22px;display:flex;flex-direction:column;gap:10px}
+  .h-cap{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 2px 2px}
+  .habit{
+    display:flex;align-items:center;gap:14px;background:var(--card);
+    border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;
+    cursor:pointer;user-select:none;-webkit-user-select:none;
+    transition:border-color .4s var(--ease), background .4s var(--ease), transform .18s var(--spring);
+  }
+  .habit:active{transform:scale(.985)}
+  .habit.on{border-color:var(--lime);background:linear-gradient(0deg,rgba(236,240,221,.55),rgba(236,240,221,.55)),var(--card)}
+  .habit .txt{flex:1;min-width:0}
+  .habit .t1{font-size:15.5px;font-weight:600;letter-spacing:-.01em}
+  .habit .t2{font-size:12.5px;color:var(--muted);line-height:1.35;margin-top:3px}
+  .sw{
+    position:relative;flex:0 0 auto;width:50px;height:30px;border-radius:15px;
+    background:var(--line);transition:background .35s var(--ease);
+  }
+  .habit.on .sw{background:var(--lime)}
+  .sw::after{
+    content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 4px rgba(43,42,38,.18);
+    transition:transform .35s var(--spring);
+  }
+  .habit.on .sw::after{transform:translateX(20px)}
+
+  /* ---------- DZEN ---------- */
+  .dzen-block{margin-top:26px}
+  .dzen-btn{
+    width:100%;display:flex;align-items:center;gap:16px;text-align:left;
+    background:var(--card);border:1px solid var(--line);border-radius:28px;
+    padding:16px 18px;cursor:pointer;font:inherit;color:inherit;
+    transition:border-color .5s var(--ease), background .5s var(--ease), transform .18s var(--spring), box-shadow .6s var(--ease);
+  }
+  .dzen-btn:active{transform:scale(.985)}
+  .dzen-btn.on{
+    border-color:var(--lime-dark);
+    background:linear-gradient(0deg,rgba(236,240,221,.8),rgba(236,240,221,.8)),var(--card);
+    box-shadow:0 10px 34px rgba(168,201,107,.35);
+  }
+  .can{
+    flex:0 0 auto;width:44px;height:74px;border-radius:12px 12px 13px 13px;position:relative;
+    background:linear-gradient(160deg,#C7DD93 0%,var(--lime) 42%,#7FA34A 100%);
+    box-shadow:inset -7px 0 12px rgba(43,42,38,.18), inset 6px 0 10px rgba(255,255,255,.35);
+  }
+  .can::before{
+    content:"";position:absolute;top:-4px;left:3px;right:3px;height:8px;border-radius:50%;
+    background:linear-gradient(180deg,#E8E5DA,#B9B5A6);
+  }
+  .can::after{
+    content:"DZEN";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    writing-mode:vertical-rl;transform:rotate(180deg);
+    font-size:13px;font-weight:800;letter-spacing:.3em;color:#F6F8EC;
+  }
+  .dzen-btn .txt{flex:1}
+  .dzen-btn .t1{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .dzen-btn .t2{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .dzen-btn .plus{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--lime-dark);text-align:right;line-height:1.5;white-space:nowrap}
+
+  /* ---------- финал ---------- */
+  .finale{
+    margin-top:26px;opacity:0;transform:translateY(14px);pointer-events:none;
+    transition:opacity .8s var(--ease) .15s, transform .8s var(--spring) .15s;
+  }
+  .finale.show{opacity:1;transform:none;pointer-events:auto}
+  .finale .big{font-size:24px;font-weight:700;letter-spacing:-.02em;line-height:1.25;text-align:center}
+  .finale .small{font-size:13.5px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.45}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+  .chip{font-size:12px;font-weight:600;color:var(--lime-dark);background:var(--lime-light);border-radius:999px;padding:7px 13px}
+
+  /* ---------- кнопка шеринга ---------- */
+  .share-row{margin-top:26px}
+  .share-btn{
+    width:100%;font:inherit;font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--card);
+    background:var(--ink);border:none;border-radius:999px;padding:17px 20px;cursor:pointer;
+    transition:transform .18s var(--spring), opacity .3s;
+  }
+  .share-btn:active{transform:scale(.97)}
+  .foot{font-size:11.5px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
+
+  /* ---------- оверлеи ---------- */
+  .veil{
+    position:fixed;inset:0;background:rgba(43,42,38,.34);backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;padding:20px;z-index:40;
+    opacity:0;pointer-events:none;transition:opacity .4s var(--ease);
+  }
+  .veil.show{opacity:1;pointer-events:auto}
+  .modal{
+    width:100%;max-width:400px;background:var(--card);border-radius:28px;padding:24px 22px 20px;
+    transform:translateY(18px) scale(.97);transition:transform .45s var(--spring);
+    max-height:calc(100vh - 40px);overflow-y:auto;
+  }
+  .veil.show .modal{transform:none}
+
+  /* share-карточка */
+  .s-card{border:1px solid var(--line);border-radius:22px;background:var(--paper);padding:18px 16px 14px;text-align:center}
+  .s-card .cap{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .s-card .mini{display:flex;justify-content:center;margin:4px 0 2px}
+  .s-card .mini svg{width:168px;height:auto}
+  .s-card .badge{font-size:19px;font-weight:700;letter-spacing:-.01em;margin-top:2px}
+  .s-card .stats{font-size:14px;color:var(--ink);margin-top:8px;line-height:1.4}
+  .s-card .stats b.hp{color:var(--lime-dark)} .s-card .stats b.md{color:var(--terra-dark)}
+  .s-card .url{font-size:10.5px;color:var(--muted);margin-top:12px;letter-spacing:.04em}
+  .m-btns{display:flex;gap:10px;margin-top:16px}
+  .m-btn{
+    flex:1;font:inherit;font-size:14.5px;font-weight:700;border-radius:999px;padding:13px 10px;cursor:pointer;
+    border:1px solid var(--line);background:var(--card);color:var(--ink);
+    transition:transform .18s var(--spring);
+  }
+  .m-btn:active{transform:scale(.96)}
+  .m-btn.main{background:var(--ink);color:var(--card);border-color:var(--ink)}
+  .m-close{display:block;margin:12px auto 0;font:inherit;font-size:13px;color:var(--muted);background:none;border:none;cursor:pointer;padding:6px 10px}
+
+  /* возврат */
+  .back-modal{text-align:center}
+  .back-modal .b-cap{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .back-modal h2{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:8px 0 4px}
+  .back-modal p{font-size:14.5px;color:var(--muted);line-height:1.5;margin-top:6px}
+  .back-modal p b{color:var(--ink)}
+
+  @media (min-width:700px){
+    .wrap{padding-top:34px}
+    h1{font-size:32px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition-duration:.01ms !important;animation-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><b>DZEN</b></div>
+    <div class="hint">внутренний ты · v9</div>
+  </header>
+
+  <h1 id="hook">Это твой внутренний&nbsp;ты.</h1>
+  <p class="sub">Включай полезные привычки — и смотри ему в лицо. Здоровье и настроение живут у него отдельно.</p>
+
+  <section class="stage" id="stage">
+    <div class="meters">
+      <div class="meter">
+        <div class="m-top"><span class="m-name">Здоровье</span><span class="m-val" id="healthVal">—</span></div>
+        <div class="m-bar"><div class="m-fill" id="healthFill"></div></div>
+      </div>
+      <div class="meter">
+        <div class="m-top"><span class="m-name">Настроение</span><span class="m-val" id="moodVal">—</span></div>
+        <div class="m-bar"><div class="m-fill" id="moodFill"></div></div>
+      </div>
+    </div>
+
+    <div class="char-holder">
+      <svg id="charSvg" viewBox="0 0 320 360" aria-label="Внутренний ты" role="img">
+        <defs>
+          <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="18"/>
+          </filter>
+        </defs>
+        <ellipse id="glow" cx="160" cy="205" rx="112" ry="106" fill="#A8C96B" opacity="0" filter="url(#soft)"/>
+        <g id="halo" opacity="0">
+          <ellipse cx="160" cy="86" rx="46" ry="12" fill="none" stroke="#56732E" stroke-width="6" opacity=".85"/>
+        </g>
+        <g id="body">
+          <rect id="head" x="70" y="110" width="180" height="196" rx="86" fill="#F6F4EC" stroke="#DFDACE" stroke-width="2"/>
+          <ellipse id="cheekL" cx="112" cy="228" rx="15" ry="9" fill="#A8C96B" opacity="0"/>
+          <ellipse id="cheekR" cx="208" cy="228" rx="15" ry="9" fill="#A8C96B" opacity="0"/>
+          <path id="browL" d="" fill="none" stroke="#2B2A26" stroke-width="6" stroke-linecap="round"/>
+          <path id="browR" d="" fill="none" stroke="#2B2A26" stroke-width="6" stroke-linecap="round"/>
+          <ellipse id="eyeL" cx="126" cy="196" rx="8" ry="8" fill="#2B2A26"/>
+          <ellipse id="eyeR" cx="194" cy="196" rx="8" ry="8" fill="#2B2A26"/>
+          <path id="mouth" d="" fill="none" stroke="#2B2A26" stroke-width="6" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="say" id="say">Пока ты просто живёшь. Ни пользы, ни боли.</div>
+  </section>
+
+  <section class="habits">
+    <div class="h-cap">Полезные привычки — плати настроением</div>
+    <div id="habitList"></div>
+  </section>
+
+  <section class="dzen-block">
+    <button class="dzen-btn" id="dzenBtn" type="button" aria-pressed="false">
+      <span class="can" aria-hidden="true"></span>
+      <span class="txt">
+        <span class="t1">Выпил DZEN</span>
+        <span class="t2" style="display:block">Единственная кнопка, где платят удовольствием.</span>
+      </span>
+      <span class="plus">+16 здоровье<br>+14 настроение</span>
+    </button>
+  </section>
+
+  <section class="finale" id="finale">
+    <div class="big">Польза, которую<br>не надо терпеть.</div>
+    <div class="small">DZEN — пребиотик-лимонад без сахара.<br>Манго-маракуйя и лайм-мята. Ищи в Додо Пицце.</div>
+    <div class="chips">
+      <span class="chip">3 вида пребиотика</span>
+      <span class="chip">≈4 г клетчатки</span>
+      <span class="chip">0 г сахара</span>
+      <span class="chip">без Е-шек</span>
+    </div>
+  </section>
+
+  <div class="share-row">
+    <button class="share-btn" id="shareBtn" type="button">Показать моего внутреннего</button>
+    <div class="foot">Он всё запомнит. Зайди завтра — узнаешь, как он жил без тебя.</div>
+  </div>
+</div>
+
+<!-- share-оверлей -->
+<div class="veil" id="shareVeil" role="dialog" aria-modal="true" aria-label="Карточка твоего внутреннего">
+  <div class="modal">
+    <div class="s-card" id="shareCard">
+      <div class="cap">Мой внутренний я</div>
+      <div class="mini" id="miniChar"></div>
+      <div class="badge" id="cardBadge">—</div>
+      <div class="stats">Здоров на <b class="hp" id="cardH">0%</b>. Счастлив на <b class="md" id="cardM">0%</b>.</div>
+      <div class="url">dzen · mirartalt-dotcom.github.io/dzen</div>
+    </div>
+    <div class="m-btns">
+      <button class="m-btn main" id="doShare" type="button">Поделиться</button>
+      <button class="m-btn" id="doCopy" type="button">Скопировать</button>
+    </div>
+    <button class="m-close" id="shareClose" type="button">Закрыть</button>
+  </div>
+</div>
+
+<!-- оверлей возврата -->
+<div class="veil" id="backVeil" role="dialog" aria-modal="true" aria-label="С возвращением">
+  <div class="modal back-modal">
+    <div class="b-cap">Ты вернулся</div>
+    <h2 id="backTitle">Он ждал.</h2>
+    <p id="backText"></p>
+    <div class="m-btns">
+      <button class="m-btn main" id="backGo" type="button">Посмотреть, как он</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+(function(){
+  /* ============ данные ============ */
+  var HABITS = [
+    { id:'sleep',  t1:'Ложусь до 23:00',        t2:'вместо второго сезона, который сам себя не досмотрит', health:18, pain:14,
+      on:'Второй сезон сам себя не досмотрит. Пусть.', off:'Сериал победил. Настроение вернулось, здоровье сделало вид, что не заметило.' },
+    { id:'sweets', t1:'Не беру сладкое к чаю',   t2:'вместо печенья, которое так грустно на тебя смотрит',  health:12, pain:17,
+      on:'Печенье грустно посмотрело вслед. Оплачено силой воли, сдачи не будет.', off:'Печенье прощено. Внутренний повеселел подозрительно быстро.' },
+    { id:'gym',    t1:'Иду в зал через лень',    t2:'вместо дивана, который считал тебя своим',             health:23, pain:15,
+      on:'Здоровье кивнуло, диван обиделся.', off:'Диван принял тебя обратно. Без вопросов.' },
+    { id:'phone',  t1:'Не залипаю в телефоне',   t2:'вместо ленты, в которую зашёл на минутку ещё час назад', health:10, pain:12,
+      on:'Лента подождёт. Она вечная, ты — нет.', off:'«На минутку». Внутренний уже приготовился к часу.' },
+    { id:'wb',     t1:'Не купил из вайлбериса',  t2:'вместо корзины, где уже лежала твоя новая жизнь',      health:8,  pain:10,
+      on:'«Это инвестиция в себя» — сказал четвёртый гаджет, который ты не открыл.', off:'Корзина оформлена. Новая жизнь приедет в пункт выдачи.' }
+  ];
+  var BASE_H = 24, BASE_M = 62;
+  var URL_TXT = 'mirartalt-dotcom.github.io/dzen';
+  var LS_KEY = 'dzen-inner-you-v1';
+
+  /* «настроение дня» — слегка меняется от даты */
+  var now = new Date();
+  var seed = now.getFullYear()*10000 + (now.getMonth()+1)*100 + now.getDate();
+  function rnd(s){ var x = Math.sin(s)*43758.5453; return x - Math.floor(x); }
+  var dayShift = Math.round((rnd(seed)-0.5)*8); /* -4..+4 */
+  var DAY_LINES = [
+    'Сегодня он с утра держится молодцом.',
+    'Сегодня он проснулся не с той ноги. Обе были не те.',
+    'Сегодня он на удивление спокоен. Подозрительно.',
+    'Сегодня он философски настроен. Это ненадолго.',
+    'Сегодня он бодрее обычного. Не спугни.'
+  ];
+  var dayLine = DAY_LINES[Math.floor(rnd(seed+7)*DAY_LINES.length)];
+
+  /* ============ состояние ============ */
+  var state = { habits:{}, dzen:false };
+  HABITS.forEach(function(h){ state.habits[h.id] = false; });
+
+  function calc(){
+    var h = BASE_H, pain = 0;
+    HABITS.forEach(function(hb){
+      if(state.habits[hb.id]){ h += hb.health; pain += hb.pain; }
+    });
+    var m = BASE_M + dayShift - pain;
+    if(state.dzen){ h += 16; m += 14; }
+    return {
+      h: Math.max(4, Math.min(100, h)),
+      m: Math.max(4, Math.min(100, m))
+    };
+  }
+  function habitsOn(){
+    var n = 0; HABITS.forEach(function(hb){ if(state.habits[hb.id]) n++; });
+    return n;
+  }
+
+  /* ============ DOM ============ */
+  var $ = function(id){ return document.getElementById(id); };
+  var el = {
+    head:$('head'), glow:$('glow'), halo:$('halo'), body:$('body'),
+    browL:$('browL'), browR:$('browR'), eyeL:$('eyeL'), eyeR:$('eyeR'),
+    mouth:$('mouth'), cheekL:$('cheekL'), cheekR:$('cheekR'),
+    healthFill:$('healthFill'), moodFill:$('moodFill'),
+    healthVal:$('healthVal'), moodVal:$('moodVal'),
+    say:$('say'), stage:$('stage'), dzenBtn:$('dzenBtn'), finale:$('finale'),
+    shareVeil:$('shareVeil'), backVeil:$('backVeil')
+  };
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ============ пружины ============ */
+  function Spring(v, k, d){ this.v=v; this.t=v; this.vel=0; this.k=k||70; this.d=d||12; }
+  Spring.prototype.step = function(dt){
+    if(reduceMotion){ this.v = this.t; this.vel = 0; return; }
+    var a = this.k*(this.t-this.v) - this.d*this.vel;
+    this.vel += a*dt; this.v += this.vel*dt;
+  };
+  var first = calc();
+  var sH = new Spring(first.h, 46, 11);     /* здоровье */
+  var sM = new Spring(first.m, 60, 10);     /* настроение */
+  var sForce = new Spring(0, 80, 12);       /* улыбка через силу (5/5) */
+  var sSincere = new Spring(0, 55, 11);     /* искренняя улыбка (DZEN) */
+  var sHalo = new Spring(0, 60, 12);
+
+  /* ============ цвет ============ */
+  function hex2rgb(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+  function mix(c1,c2,t){
+    var a=hex2rgb(c1), b=hex2rgb(c2);
+    return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')';
+  }
+  function skinColor(h){
+    if(h<50) return mix('#DAD5C4','#F6F4EC', h/50);
+    return mix('#F6F4EC','#E9F0D4', (h-50)/50);
+  }
+
+  /* ============ моргание / дыхание ============ */
+  var nextBlink = performance.now() + 1800;
+  var blinkStart = -1;
+  function blinkScale(t){
+    if(t >= nextBlink){ blinkStart = t; nextBlink = t + 2200 + Math.random()*3200; }
+    if(blinkStart < 0) return 1;
+    var p = (t - blinkStart)/150;
+    if(p >= 1){ blinkStart = -1; return 1; }
+    return Math.abs(p-0.5)*2; /* 1 -> 0 -> 1 */
+  }
+
+  /* ============ отрисовка лица ============ */
+  function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+  function drawFace(t){
+    var h = sH.v, m = sM.v;
+    var force = clamp01(sForce.v);      /* улыбка через силу */
+    var sin = clamp01(sSincere.v);      /* DZEN-искренность */
+    var sad = clamp01((55 - m)/50);     /* страдание 0..1 */
+    var joy = clamp01((m - 55)/45);     /* радость 0..1 */
+
+    /* кожа, свечение, румянец */
+    el.head.setAttribute('fill', skinColor(h));
+    var glowO = clamp01((h-52)/48)*0.5 + sin*0.2;
+    el.glow.setAttribute('opacity', glowO.toFixed(3));
+    var cheekO = (clamp01((h-60)/40)*0.35 + sin*0.3).toFixed(3);
+    el.cheekL.setAttribute('opacity', cheekO);
+    el.cheekR.setAttribute('opacity', cheekO);
+
+    /* осанка: чем меньше здоровья, тем сильнее сутулится */
+    var slump = (56 - h)*0.16;
+    if(slump < 0) slump = slump*0.4;
+    var tilt = (50 - h)*0.05;
+    var breathe = reduceMotion ? 1 : 1 + 0.007*Math.sin(t/1300*Math.PI*2);
+    el.body.setAttribute('transform',
+      'translate(0,'+slump.toFixed(2)+') rotate('+tilt.toFixed(2)+' 160 306) '+
+      'translate(160 208) scale('+breathe.toFixed(4)+') translate(-160 -208)');
+
+    /* глаза: тоска прикрывает веки, радость чуть щурит, моргание */
+    var bl = blinkScale(t);
+    var ry = 8 * (1 - 0.5*sad) * (1 - 0.35*joy*0.6) * bl;
+    if(ry < 0.6) ry = 0.6;
+    el.eyeL.setAttribute('ry', ry.toFixed(2));
+    el.eyeR.setAttribute('ry', ry.toFixed(2));
+
+    /* брови: страдальческий излом (внутренние концы вверх) */
+    var innerUp = sad*10 - sin*3;
+    var midUp = sad*4;
+    var browDrop = joy*3 + sin*2; /* расслабленные при радости */
+    el.browL.setAttribute('d',
+      'M108 '+(172+browDrop).toFixed(1)+
+      ' Q124 '+(166 - midUp + browDrop).toFixed(1)+
+      ' 140 '+(169 - innerUp + browDrop).toFixed(1));
+    el.browR.setAttribute('d',
+      'M212 '+(172+browDrop).toFixed(1)+
+      ' Q196 '+(166 - midUp + browDrop).toFixed(1)+
+      ' 180 '+(169 - innerUp + browDrop).toFixed(1));
+
+    /* рот: кривизна от настроения, форс-улыбка поверх, дрожь при 5/5 */
+    var c = (m - 50)/50;               /* -1..1 */
+    c = c*(1-force) + 0.55*force;      /* через силу: уголки вверх насильно */
+    c = c*(1-sin) + 0.9*sin;           /* DZEN: искренняя широкая */
+    var tremor = 0;
+    if(force > 0.15 && !reduceMotion){ tremor = Math.sin(t/38)*1.8*force; }
+    var w = 40 + Math.abs(c)*10 + sin*6;
+    var y = 242;
+    var ctrl = y + c*26 + tremor;
+    el.mouth.setAttribute('d',
+      'M'+(160-w/2).toFixed(1)+' '+(y + tremor*0.4).toFixed(1)+
+      ' Q160 '+ctrl.toFixed(1)+' '+(160+w/2).toFixed(1)+' '+(y - tremor*0.4).toFixed(1));
+
+    /* нимб */
+    var haloO = clamp01(sHalo.v);
+    var wob = reduceMotion ? 0 : Math.sin(t/210)*1.6*haloO;
+    el.halo.setAttribute('opacity', haloO.toFixed(3));
+    el.halo.setAttribute('transform','translate('+wob.toFixed(2)+' '+(Math.cos(t/260)*1.2*haloO).toFixed(2)+')');
+
+    /* метры */
+    el.healthFill.style.width = h.toFixed(1)+'%';
+    el.moodFill.style.width = m.toFixed(1)+'%';
+    el.healthVal.textContent = Math.round(h)+'%';
+    el.moodVal.textContent = Math.round(m)+'%';
+    el.moodFill.classList.toggle('happy', m > 55);
+  }
+
+  var rafId = null;
+  var lastT = performance.now();
+  function loop(t){
+    var dt = Math.min(0.05, (t-lastT)/1000); lastT = t;
+    sH.step(dt); sM.step(dt); sForce.step(dt); sSincere.step(dt); sHalo.step(dt);
+    drawFace(t);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  /* ============ реактивная строка ============ */
+  var sayTimer = null;
+  function say(txt){
+    el.say.classList.add('swap');
+    clearTimeout(sayTimer);
+    sayTimer = setTimeout(function(){
+      el.say.textContent = txt;
+      el.say.classList.remove('swap');
+    }, reduceMotion ? 0 : 260);
+  }
+  function stateLine(){
+    var n = habitsOn();
+    if(state.dzen) return 'Выдох. Наконец польза, за которую не пришлось страдать.';
+    if(n === 5) return 'Пять из пяти. Ты вершина ЗОЖа, но улыбаться уже нечем.';
+    if(n === 4) return 'Нимб уже светится, терпение уже мигает.';
+    if(n === 3) return 'Три подвига за день. Ты почти святой, только злой и голодный.';
+    if(n === 0) return 'Пока ты просто живёшь. Ни пользы, ни боли.';
+    return null;
+  }
+
+  /* ============ бейдж состояния ============ */
+  function badge(){
+    var v = calc(), h = v.h, m = v.m;
+    if(state.dzen && habitsOn() === 5) return 'Дзен-мастер 87 уровня';
+    if(state.dzen) return 'Наконец-то в дзене';
+    if(h >= 80 && m <= 25) return 'Святой на последнем издыхании';
+    if(h >= 60 && m <= 40) return 'Герой через не хочу';
+    if(h >= 60 && m > 55) return 'Редкий баланс';
+    if(h < 40 && m > 55) return 'Счастливый раздолбай';
+    if(h < 40 && m <= 40) return 'Просто выживает';
+    return 'Держится, как может';
+  }
+
+  /* ============ звук «пшш» + haptic ============ */
+  var actx = null;
+  function pshh(){
+    try{
+      if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      if(actx.state === 'suspended') actx.resume();
+      var dur = 0.55;
+      var buf = actx.createBuffer(1, actx.sampleRate*dur, actx.sampleRate);
+      var d = buf.getChannelData(0);
+      for(var i=0;i<d.length;i++){ d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 1.6); }
+      var src = actx.createBufferSource(); src.buffer = buf;
+      var bp = actx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=3800; bp.Q.value=0.7;
+      var g = actx.createGain();
+      g.gain.setValueAtTime(0.0001, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.4, actx.currentTime+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur);
+      src.connect(bp); bp.connect(g); g.connect(actx.destination);
+      src.start();
+    }catch(e){ /* без звука тоже норм */ }
+  }
+  function tap(){ if(navigator.vibrate) navigator.vibrate(12); }
+
+  /* ============ пузырьки ============ */
+  function bubbles(){
+    if(reduceMotion) return;
+    for(var i=0;i<16;i++){
+      (function(i){
+        setTimeout(function(){
+          var b = document.createElement('span');
+          b.className = 'bubble';
+          var s = 6 + Math.random()*14;
+          b.style.width = s+'px'; b.style.height = s+'px';
+          b.style.left = (18 + Math.random()*64)+'%';
+          b.style.animationDuration = (2 + Math.random()*1.4)+'s';
+          el.stage.appendChild(b);
+          setTimeout(function(){ b.remove(); }, 3600);
+        }, i*90);
+      })(i);
+    }
+  }
+
+  /* ============ применение состояния ============ */
+  function apply(quip){
+    var v = calc();
+    sH.t = v.h; sM.t = v.m;
+    var n = habitsOn();
+    sForce.t = (n === 5 && !state.dzen) ? 1 : 0;
+    sSincere.t = state.dzen ? 1 : 0;
+    sHalo.t = (n === 5) ? 1 : 0;
+    document.body.classList.toggle('zen', state.dzen);
+    el.finale.classList.toggle('show', state.dzen);
+    el.dzenBtn.classList.toggle('on', state.dzen);
+    el.dzenBtn.setAttribute('aria-pressed', state.dzen ? 'true' : 'false');
+    var line = stateLine();
+    say(line || quip || dayLine);
+    save();
+  }
+
+  /* ============ localStorage ============ */
+  function save(){
+    try{
+      var v = calc();
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        habits: state.habits, dzen: state.dzen, h: Math.round(v.h), m: Math.round(v.m),
+        ts: Date.now(), badge: badge()
+      }));
+    }catch(e){}
+  }
+  function load(){
+    try{ return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); }
+    catch(e){ return null; }
+  }
+
+  /* ============ привычки UI ============ */
+  var list = $('habitList');
+  list.style.display = 'flex'; list.style.flexDirection = 'column'; list.style.gap = '10px';
+  HABITS.forEach(function(hb){
+    var d = document.createElement('div');
+    d.className = 'habit'; d.id = 'hab-'+hb.id;
+    d.setAttribute('role','switch'); d.setAttribute('aria-checked','false'); d.tabIndex = 0;
+    d.innerHTML = '<div class="txt"><div class="t1">'+hb.t1+'</div><div class="t2">'+hb.t2+'</div></div><div class="sw"></div>';
+    function toggle(){
+      tap();
+      state.habits[hb.id] = !state.habits[hb.id];
+      d.classList.toggle('on', state.habits[hb.id]);
+      d.setAttribute('aria-checked', state.habits[hb.id] ? 'true' : 'false');
+      apply(state.habits[hb.id] ? hb.on : hb.off);
+    }
+    d.addEventListener('click', toggle);
+    d.addEventListener('keydown', function(e){
+      if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); toggle(); }
+    });
+    list.appendChild(d);
+  });
+
+  /* ============ DZEN ============ */
+  el.dzenBtn.addEventListener('click', function(){
+    tap();
+    state.dzen = !state.dzen;
+    if(state.dzen){ pshh(); bubbles(); }
+    apply(state.dzen ? null : 'Банка кончилась. Внутренний помнит, как было.');
+  });
+
+  /* ============ шеринг ============ */
+  function shareText(){
+    var v = calc();
+    return 'Мой внутренний я: здоров на '+Math.round(v.h)+'%, счастлив на '+Math.round(v.m)+'%. «'+badge()+'». Спорим, твой не лучше? → https://'+URL_TXT;
+  }
+  $('shareBtn').addEventListener('click', function(){
+    tap();
+    var v = calc();
+    $('cardBadge').textContent = badge();
+    $('cardH').textContent = Math.round(v.h)+'%';
+    $('cardM').textContent = Math.round(v.m)+'%';
+    var mini = $('miniChar');
+    mini.innerHTML = '';
+    var clone = document.getElementById('charSvg').cloneNode(true);
+    clone.removeAttribute('id');
+    mini.appendChild(clone);
+    el.shareVeil.classList.add('show');
+  });
+  $('shareClose').addEventListener('click', function(){ el.shareVeil.classList.remove('show'); });
+  el.shareVeil.addEventListener('click', function(e){ if(e.target === el.shareVeil) el.shareVeil.classList.remove('show'); });
+  $('doShare').addEventListener('click', function(){
+    tap();
+    if(navigator.share){
+      navigator.share({ text: shareText() }).catch(function(){});
+    } else {
+      copyText(this);
+    }
+  });
+  $('doCopy').addEventListener('click', function(){ copyText(this); });
+  function copyText(btn){
+    var txt = shareText();
+    var done = function(){
+      var old = btn.textContent;
+      btn.textContent = 'Скопировано';
+      setTimeout(function(){ btn.textContent = old; }, 1400);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done).catch(function(){ fallbackCopy(txt); done(); });
+    } else { fallbackCopy(txt); done(); }
+  }
+  function fallbackCopy(txt){
+    var ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    ta.remove();
+  }
+
+  /* ============ возврат ============ */
+  function initReturn(){
+    var saved = load();
+    if(!saved) return;
+    /* восстановить состояние */
+    HABITS.forEach(function(hb){
+      state.habits[hb.id] = !!(saved.habits && saved.habits[hb.id]);
+      var d = $('hab-'+hb.id);
+      d.classList.toggle('on', state.habits[hb.id]);
+      d.setAttribute('aria-checked', state.habits[hb.id] ? 'true' : 'false');
+    });
+    state.dzen = !!saved.dzen;
+
+    var hours = (Date.now() - (saved.ts||0)) / 36e5;
+    if(hours > 3){
+      var n = habitsOn();
+      var lived;
+      if(state.dzen) lived = 'Он всё это время был в дзене. Редкое зрелище — цени.';
+      else if(n === 5) lived = 'Он всё это время держал пять из пяти. Улыбка так и не разжалась.';
+      else if(n >= 3) lived = 'Он терпел без тебя '+Math.round(hours < 48 ? hours : hours/24)+(hours < 48 ? ' ч' : ' дн')+'. Молча. Почти.';
+      else if(n >= 1) lived = 'Он жил вполсилы и особо не жаловался. Но ждал.';
+      else lived = 'Он просто лежал. Ни пользы, ни боли — но скучал.';
+      $('backTitle').textContent = 'Он жил без тебя.';
+      $('backText').innerHTML = 'Пока тебя не было: здоров на <b>'+(saved.h||0)+'%</b>, счастлив на <b>'+(saved.m||0)+'%</b> — «'+(saved.badge||'держался')+'».<br>'+lived+'<br><em>'+dayLine+'</em>';
+      el.backVeil.classList.add('show');
+    }
+  }
+  $('backGo').addEventListener('click', function(){
+    tap();
+    el.backVeil.classList.remove('show');
+    /* лёгкая анимация «ожил»: приседает и распрямляется через пружину */
+    sH.v = Math.max(4, sH.v - 26); sM.v = Math.max(4, sM.v - 20);
+    apply(null);
+  });
+
+  /* ============ старт ============ */
+  initReturn();
+  apply(null);
+  /* стартовые значения пружин — из текущего расчёта, чтобы не прыгало */
+  var v0 = calc();
+  if(!el.backVeil.classList.contains('show')){ sH.v = v0.h - 18; sM.v = v0.m - 12; }
+  drawFace(performance.now());
+  rafId = requestAnimationFrame(loop);
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){ if(rafId) cancelAnimationFrame(rafId); rafId = null; }
+    else if(!rafId){ lastT = performance.now(); rafId = requestAnimationFrame(loop); }
+  });
+})();
+</script>
+</body>
+</html>

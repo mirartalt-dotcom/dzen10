@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>DZEN — Калькулятор страданий</title>
+<style>
+  :root{
+    --paper:#F4F1EA; --paper-zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F;
+    --line:#DFDACE; --card:#FBFAF6;
+    --lime:#A8C96B; --lime-dark:#56732E; --lime-light:#ECF0DD;
+    --terra:#C0563E; --terra-dark:#8A3A28; --terra-light:#F4E3DD;
+    --ease:cubic-bezier(.22,.61,.36,1); --spring:cubic-bezier(.34,1.42,.5,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,Roboto,sans-serif;
+    background:var(--paper); color:var(--ink);
+    -webkit-font-smoothing:antialiased; user-select:none;-webkit-user-select:none;
+    overflow:hidden;
+  }
+  .phone{
+    position:fixed; inset:0; background:var(--paper); overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  @media (min-width:720px){
+    body{
+      display:grid; place-items:center; min-height:100vh; overflow:hidden;
+      background:radial-gradient(120% 120% at 50% 0%, #ECE8DC 0%, #DDD8C9 100%);
+    }
+    .phone{
+      position:relative; inset:auto; width:390px; height:min(800px,94vh);
+      border-radius:46px; border:1px solid #D8D2C2;
+      box-shadow:0 40px 90px rgba(43,42,38,.26), 0 4px 18px rgba(43,42,38,.14);
+    }
+  }
+  /* progress bars */
+  .bars{
+    position:absolute; top:calc(10px + env(safe-area-inset-top)); left:14px; right:14px;
+    display:flex; gap:4px; z-index:6;
+  }
+  .bar{flex:1; height:3px; border-radius:2px; background:rgba(43,42,38,.12); transition:background .3s var(--ease)}
+  .bar.on{background:rgba(43,42,38,.55)}
+  .brand{
+    position:absolute; top:calc(22px + env(safe-area-inset-top)); right:18px; z-index:6;
+    font-size:10px; font-weight:700; letter-spacing:.34em; color:var(--muted);
+  }
+  /* stage & cards */
+  .stage{flex:1; position:relative; z-index:1; cursor:pointer}
+  .card{
+    position:absolute; inset:0;
+    padding:76px 26px calc(30px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; justify-content:center; gap:14px;
+    animation:cardIn .55s var(--spring);
+  }
+  @keyframes cardIn{
+    from{opacity:0; transform:translateY(18px) scale(.965)}
+    to{opacity:1; transform:translateY(0) scale(1)}
+  }
+  .center{align-items:center; text-align:center}
+  .kicker{
+    font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--muted);
+  }
+  .qtitle{font-size:34px; line-height:1.12; font-weight:800; letter-spacing:-.02em}
+  .qsub{font-size:15px; line-height:1.45; color:var(--muted); margin-bottom:8px}
+  .hooktitle{font-size:32px; line-height:1.16; font-weight:800; letter-spacing:-.02em}
+  .huge{
+    font-size:clamp(88px,32vw,132px); line-height:1; font-weight:800;
+    letter-spacing:-.05em; font-variant-numeric:tabular-nums;
+  }
+  .terra{color:var(--terra)} .limec{color:var(--lime-dark)}
+  .sub{font-size:16px; line-height:1.45; color:var(--muted); max-width:300px}
+  .hint{
+    margin-top:auto; font-size:13px; color:var(--muted); text-align:center; padding-top:18px;
+    animation:hintPulse 2.4s var(--ease) infinite;
+  }
+  @keyframes hintPulse{0%,100%{opacity:.55}50%{opacity:1}}
+  /* options */
+  .opts{display:flex; flex-direction:column; gap:10px}
+  .opt{
+    font:inherit; font-size:16px; font-weight:600; color:var(--ink); text-align:left;
+    background:var(--card); border:1.5px solid var(--line); border-radius:20px;
+    padding:16px 18px; cursor:pointer; line-height:1.3;
+    transition:transform .25s var(--spring), border-color .2s, background .2s;
+  }
+  .opt:active{transform:scale(.97)}
+  .opt.sel{border-color:var(--lime-dark); background:var(--lime-light)}
+  .opts.need{animation:shake .45s var(--ease)}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)} 22%{transform:translateX(-7px)}
+    48%{transform:translateX(6px)} 74%{transform:translateX(-4px)}
+  }
+  .chips{display:flex; gap:8px; flex-wrap:wrap; min-height:32px}
+  .chip{
+    font-size:13px; font-weight:700; padding:7px 12px; border-radius:999px;
+    animation:chipIn .45s var(--spring) backwards;
+  }
+  .chip.pain{background:var(--terra-light); color:var(--terra-dark)}
+  .chip.gain{background:var(--lime-light); color:var(--lime-dark)}
+  .chip.neutral{background:#EAE6DA; color:var(--muted)}
+  .chip:nth-child(2){animation-delay:.08s} .chip:nth-child(3){animation-delay:.16s}
+  @keyframes chipIn{from{opacity:0; transform:translateY(8px) scale(.85)} to{opacity:1; transform:none}}
+  /* teaser (Zeigarnik) */
+  .teaser{
+    position:absolute; bottom:calc(16px + env(safe-area-inset-bottom)); left:50%;
+    transform:translateX(-50%); z-index:5; display:none;
+    font-size:12px; font-weight:600; color:var(--muted);
+    background:var(--card); border:1px solid var(--line); border-radius:999px;
+    padding:7px 14px; white-space:nowrap; pointer-events:none;
+  }
+  .teaser.show{display:block; animation:chipIn .5s var(--spring)}
+  .teaser b{color:var(--terra); filter:blur(6px); font-variant-numeric:tabular-nums}
+  /* calc card */
+  .calcnum{filter:blur(10px); opacity:.75}
+  .dots::after{content:"…"; animation:hintPulse 1s infinite}
+  /* persona */
+  .pname{font-size:clamp(38px,11vw,46px); line-height:1.08; font-weight:800; letter-spacing:-.02em}
+  .pquote{font-size:17px; line-height:1.5; color:var(--ink); max-width:300px}
+  .barnum{font-size:14px; line-height:1.5; color:var(--muted); max-width:290px}
+  .divider{width:44px; height:2px; background:var(--line); border-radius:1px; margin:4px 0}
+  /* flip card */
+  .fliprow{display:flex; align-items:baseline; gap:12px}
+  .fliplab{font-size:20px; font-weight:700; color:var(--muted); transition:color .5s}
+  .flipnum{transition:color .5s}
+  .flipline{font-size:22px; font-weight:800; letter-spacing:-.02em; line-height:1.2; max-width:300px}
+  .flipsub{opacity:0; transition:opacity .6s var(--ease); font-size:15px; color:var(--muted); max-width:290px; line-height:1.45}
+  .flipsub.show{opacity:1}
+  .facts{font-size:12px; color:var(--muted); letter-spacing:.02em; margin-top:6px}
+  /* can */
+  .can{
+    position:relative; width:104px; height:178px; margin:0 auto;
+    border-radius:22px 22px 26px 26px / 30px 30px 34px 34px;
+    background:linear-gradient(155deg,#C3DC8F 0%,#A8C96B 45%,#8AAE4E 100%);
+    box-shadow:0 18px 36px rgba(86,115,46,.28), inset 0 2px 6px rgba(255,255,255,.45);
+    animation:canIn .8s var(--spring) backwards;
+  }
+  @keyframes canIn{from{opacity:0; transform:translateY(26px) scale(.9)} to{opacity:1; transform:none}}
+  .can::before{ /* lid */
+    content:""; position:absolute; top:-7px; left:7px; right:7px; height:16px;
+    border-radius:50%; background:linear-gradient(180deg,#E6E2D6,#C9C4B4);
+    box-shadow:inset 0 -2px 4px rgba(43,42,38,.18);
+  }
+  .can::after{ /* highlight */
+    content:""; position:absolute; top:14px; bottom:14px; left:14px; width:16px;
+    border-radius:10px; background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.05));
+  }
+  .can span{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    writing-mode:vertical-rl; font-size:30px; font-weight:800; letter-spacing:.32em;
+    color:var(--paper); text-shadow:0 1px 2px rgba(86,115,46,.35);
+  }
+  /* final screenshot card */
+  .shot{
+    width:100%; max-width:320px; background:var(--card); border:1.5px solid var(--line);
+    border-radius:26px; padding:26px 22px 18px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    box-shadow:0 14px 34px rgba(43,42,38,.10);
+  }
+  .fbig{font-size:88px; line-height:1; font-weight:800; letter-spacing:-.05em; color:var(--terra); font-variant-numeric:tabular-nums}
+  .fbigsub{font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:-4px}
+  .fpersona{font-size:24px; font-weight:800; letter-spacing:-.02em; margin-top:6px}
+  .fline{font-size:14px; color:var(--muted)}
+  .fkaif{
+    font-size:14px; font-weight:700; color:var(--lime-dark);
+    background:var(--lime-light); border-radius:999px; padding:7px 14px; margin-top:6px;
+  }
+  .furl{font-size:10.5px; letter-spacing:.06em; color:var(--muted); margin-top:10px; opacity:.75}
+  .btn{
+    font:inherit; font-size:16px; font-weight:700; border-radius:999px; cursor:pointer;
+    padding:15px 22px; width:100%; max-width:320px;
+    transition:transform .25s var(--spring), opacity .2s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--ink); color:var(--paper); border:none}
+  .btn.ghost{background:transparent; color:var(--muted); border:1.5px solid var(--line)}
+  .delta{font-size:14px; font-weight:700; border-radius:999px; padding:7px 14px}
+  .delta.down{background:var(--lime-light); color:var(--lime-dark)}
+  .delta.up{background:var(--terra-light); color:var(--terra-dark)}
+  .delta.same{background:#EAE6DA; color:var(--muted)}
+  /* toast */
+  .toast{
+    position:absolute; bottom:calc(26px + env(safe-area-inset-bottom)); left:50%;
+    transform:translate(-50%,16px); z-index:9; opacity:0; pointer-events:none;
+    background:var(--ink); color:var(--paper); font-size:14px; font-weight:600;
+    border-radius:999px; padding:11px 18px; white-space:nowrap;
+    transition:opacity .3s var(--ease), transform .4s var(--spring);
+  }
+  .toast.show{opacity:1; transform:translate(-50%,0)}
+  .zenbg{background:var(--paper-zen)}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none !important; transition:none !important}
+    .flipsub{opacity:1}
+  }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="bars" id="bars"></div>
+  <div class="brand">DZEN</div>
+  <div class="stage" id="stage"></div>
+  <div class="teaser" id="teaser">индекс уже считается · <b id="teaserNum">37</b></div>
+  <div class="toast" id="toast"></div>
+</div>
+<script>
+"use strict";
+var RM = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var SKEY = "dzen_stories_result";
+var SHARE_URL = "https://mirartalt-dotcom.github.io/dzen";
+var MAX_S = 68;
+
+var HABITS = [
+  { id:"sleep", health:18, pain:14,
+    title:"Ложишься до 23:00?",
+    sub:"второй сезон, между прочим, сам себя не досмотрит",
+    tangible:function(w){ return "это примерно " + Math.round(180*w) + " недосмотренных серий в год"; },
+    opts:[
+      { w:1,  t:"Ложусь. Взрослая жизнь победила", share:.24 },
+      { w:.5, t:"После «ещё одной серии». Или двух", share:.47 },
+      { w:0,  t:"Сон найдёт меня сам", share:.29 }
+    ]},
+  { id:"sweets", health:12, pain:17,
+    title:"Чай. Рядом печенье.",
+    sub:"оно так грустно на тебя смотрит",
+    tangible:function(w){ return "это примерно " + Math.round(300*w) + " печений, которым ты отказал за год"; },
+    opts:[
+      { w:1,  t:"Держусь. Печенье переживёт", share:.21 },
+      { w:.5, t:"Половинку. Половинка не считается", share:.44 },
+      { w:0,  t:"Чай — это повод. Главное — печенье", share:.35 }
+    ]},
+  { id:"gym", health:23, pain:15,
+    title:"Зал сегодня. Идёшь?",
+    sub:"диван вообще-то считал тебя своим",
+    tangible:function(w){ return "это примерно " + Math.round(150*w) + " вечеров диван ждал тебя зря"; },
+    opts:[
+      { w:1,  t:"Иду. Диван подал на развод", share:.26 },
+      { w:.5, t:"Иду, когда совесть громче лени", share:.42 },
+      { w:0,  t:"Мой спорт — дотянуться до пульта", share:.32 }
+    ]},
+  { id:"phone", health:10, pain:12,
+    title:"Телефон в руке. Опять.",
+    sub:"в ленту зашёл на минутку — ещё час назад",
+    tangible:function(w){ return "это примерно " + Math.round(400*w) + " часов ленты, прожитых вживую"; },
+    opts:[
+      { w:1,  t:"Откладываю. Лента поживёт без меня", share:.18 },
+      { w:.5, t:"На минутку. Честно, на минутку", share:.50 },
+      { w:0,  t:"Мы с лентой уже одно целое", share:.32 }
+    ]},
+  { id:"wb", health:8, pain:10,
+    title:"Корзина на вайлдберисе собрана.",
+    sub:"там уже лежала твоя новая жизнь",
+    tangible:function(w){ return "это примерно " + Math.round(36*w) + " корзин, закрытых без чека"; },
+    opts:[
+      { w:1,  t:"Закрыл и не купил. Инвестиция в себя", share:.30 },
+      { w:.5, t:"Оставил «подумать». Третий день думаю", share:.45 },
+      { w:0,  t:"Уже едет. Так было нужно", share:.25 }
+    ]}
+];
+
+var PERSONAS = [
+  { name:"Святой и злой",
+    test:function(r){ return r.done===5; },
+    quote:"Пять из пяти. Идеальный человек — и абсолютно вымотанный.",
+    barnum:"Ты не расслабляешься даже когда отдыхаешь — и называешь это продуктивностью." },
+  { name:"Просто живёшь",
+    test:function(r){ return r.done===0 && r.halves===0; },
+    quote:"Ни пользы, ни боли. Диван доволен.",
+    barnum:"Ты не страдаешь ради здоровья — и, честно говоря, в этом есть свой дзен." },
+  { name:"Ночной дожиратель",
+    test:function(r){ return r.w[0]===0 && r.w[1]===0; },
+    quote:"Днём — сила воли. Ночью — переговоры с холодильником. Побеждает опыт.",
+    barnum:"Ты берёшь сладкое не от голода, а когда дедлайн." },
+  { name:"Ночной скроллер",
+    test:function(r){ return r.w[0]===0 && r.w[3]===0; },
+    quote:"Три часа ночи. Лента ещё не кончилась. Ты держишься.",
+    barnum:"Ты заходишь «проверить время» — и узнаёшь его через час." },
+  { name:"Почти святой",
+    test:function(r){ return r.done>=3; },
+    quote:"Три подвига за день. Ты почти святой — только злой и голодный.",
+    barnum:"Ты держишься не ради здоровья, а чтобы не разочаровать себя вчерашнего." },
+  { name:"Мастер компромисса",
+    test:function(r){ return true; },
+    quote:"Договорился с собой. Обе стороны сделали вид, что довольны.",
+    barnum:"Твоё «ну ладно, но в последний раз» — уже почти традиция." }
+];
+
+var N = 12; // 0 hook | 1..5 questions | 6 calc | 7 shock | 8 persona | 9 percent | 10 flip | 11 final
+var idx = 0;
+var sel = [null,null,null,null,null]; // выбранный индекс варианта
+var advancing = false;
+var timers = [];
+var prevRun = loadRun();
+
+var stage = document.getElementById("stage");
+var barsEl = document.getElementById("bars");
+var teaser = document.getElementById("teaser");
+var teaserNum = document.getElementById("teaserNum");
+var toastEl = document.getElementById("toast");
+var toastT = null;
+
+/* ---------- helpers ---------- */
+function loadRun(){
+  try{ var v = JSON.parse(localStorage.getItem(SKEY)); return (v && typeof v.s==="number") ? v : null; }
+  catch(e){ return null; }
+}
+function saveRun(r){
+  try{ localStorage.setItem(SKEY, JSON.stringify({ p:r.persona.name, s:r.s, pct:r.pct, t:Date.now() })); }catch(e){}
+}
+function vibrate(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
+function cdf(z){ return 1/(1+Math.exp(-1.702*z)); }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+
+function weights(){
+  return sel.map(function(j,i){ return j===null ? null : HABITS[i].opts[j].w; });
+}
+function rawS(){
+  var s = 0;
+  weights().forEach(function(w,i){ if(w) s += HABITS[i].pain*w; });
+  return Math.round(s);
+}
+function answeredCount(){ return sel.filter(function(j){ return j!==null; }).length; }
+
+function computeResult(){
+  var w = weights().map(function(v){ return v===null ? 0 : v; });
+  var s = rawS();
+  var h = 0; w.forEach(function(v,i){ h += HABITS[i].health*v; });
+  h = Math.round(h);
+  var done = w.filter(function(v){ return v===1; }).length;
+  var halves = w.filter(function(v){ return v===0.5; }).length;
+  var ctx = { w:w, done:done, halves:halves };
+  var persona = null;
+  for(var i=0;i<PERSONAS.length;i++){ if(PERSONAS[i].test(ctx)){ persona = PERSONAS[i]; break; } }
+  var pct = clamp(Math.round(cdf((s-30)/13)*100), 2, 98);
+  var combo = 1;
+  sel.forEach(function(j,i){ if(j!==null) combo *= HABITS[i].opts[j].share; });
+  var comboPct = Math.max(1, Math.round(combo*100));
+  // самая «дорогая» привычка → осязаемый перевод
+  var tangible = "ноль страданий. и ноль подвигов — редкий баланс.";
+  var best = -1, bi = -1;
+  w.forEach(function(v,i){ var c = HABITS[i].pain*v; if(c>best){ best=c; bi=i; } });
+  if(s>0 && bi>=0 && w[bi]>0) tangible = HABITS[bi].tangible(w[bi]);
+  return { s:s, h:h, done:done, halves:halves, persona:persona, pct:pct, comboPct:comboPct, tangible:tangible, kaif:s+14 };
+}
+
+function animateCount(el, from, to, dur, suffixFn){
+  if(!el) return;
+  if(RM){ el.textContent = to; if(suffixFn) suffixFn(); return; }
+  var t0 = null;
+  function step(ts){
+    if(!t0) t0 = ts;
+    var p = Math.min(1, (ts-t0)/dur);
+    var e = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(from + (to-from)*e);
+    if(p<1) requestAnimationFrame(step);
+    else if(suffixFn) suffixFn();
+  }
+  requestAnimationFrame(step);
+}
+
+function fizz(){
+  if(RM) return;
+  try{
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    var ctx = new AC();
+    var dur = 0.5;
+    var buf = ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for(var i=0;i<d.length;i++){ d[i] = (Math.random()*2-1) * Math.pow(1-i/d.length, 1.6); }
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    var f = ctx.createBiquadFilter(); f.type="bandpass"; f.frequency.value = 5200; f.Q.value = 0.6;
+    var g = ctx.createGain(); g.gain.value = 0.07;
+    src.connect(f); f.connect(g); g.connect(ctx.destination);
+    src.start();
+    src.onended = function(){ try{ ctx.close(); }catch(e){} };
+  }catch(e){}
+}
+
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  if(toastT) clearTimeout(toastT);
+  toastT = setTimeout(function(){ toastEl.classList.remove("show"); }, 2000);
+}
+
+/* ---------- cards ---------- */
+function hookHTML(){
+  if(prevRun){
+    return '<div class="card center">' +
+      '<div class="kicker">с возвращением</div>' +
+      '<h1 class="hooktitle">В прошлый раз ты был<br>«' + esc(prevRun.p) + '».</h1>' +
+      '<p class="sub">' + prevRun.s + ' страданий из ' + MAX_S + '. Пересчитаем? Вдруг стало хуже.</p>' +
+      '<div class="hint">тапни справа →</div></div>';
+  }
+  return '<div class="card center">' +
+    '<div class="kicker">60 секунд</div>' +
+    '<h1 class="hooktitle">Сейчас посчитаем, сколько ты страдаешь, чтобы быть здоровым.</h1>' +
+    '<p class="sub">Пять честных вопросов. Одна цифра, которую захочется кому-нибудь предъявить.</p>' +
+    '<div class="hint">тапни справа →</div></div>';
+}
+
+function questionHTML(q){
+  var h = HABITS[q];
+  var opts = h.opts.map(function(o,j){
+    var s = (sel[q]===j) ? " sel" : "";
+    return '<button class="opt'+s+'" data-q="'+q+'" data-j="'+j+'">'+esc(o.t)+'</button>';
+  }).join("");
+  return '<div class="card">' +
+    '<div class="kicker">вопрос ' + (q+1) + ' из 5</div>' +
+    '<h2 class="qtitle">' + esc(h.title) + '</h2>' +
+    '<p class="qsub">' + esc(h.sub) + '</p>' +
+    '<div class="opts" id="opts">' + opts + '</div>' +
+    '<div class="chips" id="chips"></div></div>';
+}
+
+function calcHTML(){
+  return '<div class="card center">' +
+    '<div class="kicker dots">считаем твои страдания</div>' +
+    '<div class="huge terra calcnum" id="calcnum">42</div>' +
+    '<p class="sub">складываем подвиги, вычитаем диван</p></div>';
+}
+
+function shockHTML(r){
+  var delta = "";
+  if(prevRun){
+    var d = r.s - prevRun.s;
+    if(d < 0) delta = '<div class="delta down">на ' + Math.abs(d) + ' меньше, чем в прошлый раз</div>';
+    else if(d > 0) delta = '<div class="delta up">на ' + d + ' больше, чем в прошлый раз</div>';
+    else delta = '<div class="delta same">ровно как в прошлый раз. стабильность</div>';
+  }
+  return '<div class="card center">' +
+    '<div class="kicker">твой индекс страданий</div>' +
+    '<div class="huge terra" id="bignum">0</div>' +
+    '<p class="sub">' + esc(r.tangible) + '</p>' + delta +
+    '<div class="hint">дальше →</div></div>';
+}
+
+function personaHTML(r){
+  return '<div class="card center">' +
+    '<div class="kicker">твой тип</div>' +
+    '<div class="pname">«' + esc(r.persona.name) + '»</div>' +
+    '<p class="pquote">' + esc(r.persona.quote) + '</p>' +
+    '<div class="divider"></div>' +
+    '<p class="barnum">' + esc(r.persona.barnum) + '</p>' +
+    '<div class="hint">дальше →</div></div>';
+}
+
+function percentHTML(r){
+  return '<div class="card center">' +
+    '<div class="kicker">среди прошедших</div>' +
+    '<div class="huge terra"><span id="pctnum">0</span>%</div>' +
+    '<p class="sub">ты страдаешь сильнее, чем ' + r.pct + '% людей</p>' +
+    '<p class="barnum">а твоё сочетание ответов — всего у ' + r.comboPct + '%</p>' +
+    '<div class="hint">дальше →</div></div>';
+}
+
+function flipHTML(r){
+  return '<div class="card center zenbg">' +
+    '<div class="can"><span>DZEN</span></div>' +
+    '<div class="fliprow"><span class="huge terra flipnum" id="flipnum">' + r.s + '</span>' +
+    '<span class="fliplab" id="fliplab">страданий</span></div>' +
+    '<div class="flipline">Польза, которую не надо терпеть.</div>' +
+    '<p class="flipsub" id="flipsub">Выдох. Наконец польза, за которую не пришлось страдать.</p>' +
+    '<div class="facts">0 г сахара · ≈4 г клетчатки · 3 вида пребиотика · без Е-шек</div>' +
+    '<div class="hint">дальше →</div></div>';
+}
+
+function finalHTML(r){
+  return '<div class="card center" style="gap:12px">' +
+    '<div class="shot">' +
+      '<div class="kicker" style="font-size:10px">калькулятор страданий</div>' +
+      '<div class="fbig">' + r.s + '</div>' +
+      '<div class="fbigsub">страданий из ' + MAX_S + '</div>' +
+      '<div class="fpersona">«' + esc(r.persona.name) + '»</div>' +
+      '<div class="fline">страдаю сильнее ' + r.pct + '% прошедших</div>' +
+      '<div class="fkaif">с DZEN — ' + r.kaif + ' кайфа</div>' +
+      '<div class="furl">dzen · mirartalt-dotcom.github.io/dzen</div>' +
+    '</div>' +
+    '<button class="btn primary" id="shareBtn">Поделиться</button>' +
+    '<button class="btn ghost" id="againBtn">Пересчитать</button></div>';
+}
+
+function cardHTML(i){
+  if(i===0) return hookHTML();
+  if(i>=1 && i<=5) return questionHTML(i-1);
+  if(i===6) return calcHTML();
+  var r = computeResult();
+  if(i===7) return shockHTML(r);
+  if(i===8) return personaHTML(r);
+  if(i===9) return percentHTML(r);
+  if(i===10) return flipHTML(r);
+  return finalHTML(r);
+}
+
+/* ---------- render & nav ---------- */
+function renderBars(){
+  var html = "";
+  for(var i=0;i<N;i++) html += '<div class="bar' + (i<=idx ? " on":"") + '"></div>';
+  barsEl.innerHTML = html;
+}
+
+function renderTeaser(){
+  var show = idx>=1 && idx<=5 && answeredCount()>=2;
+  teaser.classList.toggle("show", show);
+  if(show) teaserNum.textContent = rawS();
+}
+
+function render(){
+  clearTimers();
+  stage.innerHTML = cardHTML(idx);
+  renderBars();
+  renderTeaser();
+
+  if(idx===6){
+    if(!RM){
+      var cn = document.getElementById("calcnum");
+      var iv = setInterval(function(){ if(cn) cn.textContent = 10 + Math.floor(Math.random()*58); }, 90);
+      timers.push(setTimeout(function(){ clearInterval(iv); }, 1800));
+    }
+    later(function(){ go(7); }, RM ? 700 : 1900);
+  }
+  if(idx===7){
+    var r1 = computeResult();
+    animateCount(document.getElementById("bignum"), 0, r1.s, 1400);
+    later(function(){ vibrate([12,40,18]); }, RM ? 0 : 1300);
+  }
+  if(idx===9){
+    animateCount(document.getElementById("pctnum"), 0, computeResult().pct, 1200);
+  }
+  if(idx===10){
+    var r2 = computeResult();
+    later(function(){
+      fizz(); vibrate(12);
+      var fn = document.getElementById("flipnum");
+      var fl = document.getElementById("fliplab");
+      var fs = document.getElementById("flipsub");
+      if(fn){ fn.classList.remove("terra"); fn.classList.add("limec"); }
+      if(fl){ fl.textContent = "кайфа"; fl.style.color = "var(--lime-dark)"; }
+      animateCount(fn, r2.s, r2.kaif, 900);
+      if(fs) fs.classList.add("show");
+    }, RM ? 100 : 1100);
+  }
+  if(idx===11){
+    var r3 = computeResult();
+    saveRun(r3);
+    var sb = document.getElementById("shareBtn");
+    var ab = document.getElementById("againBtn");
+    if(sb) sb.addEventListener("click", share);
+    if(ab) ab.addEventListener("click", restart);
+  }
+}
+
+function go(i){
+  idx = clamp(i, 0, N-1);
+  vibrate(12);
+  render();
+}
+
+function prevIndex(){
+  if(idx===7) return 5;      // назад из результата — мимо «считаем»
+  return idx - 1;
+}
+
+function tryForward(){
+  if(idx>=1 && idx<=5 && sel[idx-1]===null){
+    var o = document.getElementById("opts");
+    if(o){ o.classList.remove("need"); void o.offsetWidth; o.classList.add("need"); }
+    vibrate(20);
+    return;
+  }
+  if(idx===11) return;
+  go(idx+1);
+}
+
+function pick(q, j){
+  if(advancing) return;
+  advancing = true;
+  sel[q] = j;
+  var h = HABITS[q], o = h.opts[j];
+  var btns = stage.querySelectorAll(".opt");
+  btns.forEach(function(b){ b.classList.toggle("sel", +b.dataset.j===j); });
+  var pain = Math.round(h.pain*o.w), gain = Math.round(h.health*o.w);
+  var note = o.w===1 ? "сила воли списана" : (o.w===0.5 ? "засчитано наполовину" : "ни пользы, ни боли");
+  var chips = document.getElementById("chips");
+  if(chips){
+    chips.innerHTML =
+      '<span class="chip pain">+' + pain + ' страданий</span>' +
+      '<span class="chip gain">+' + gain + ' пользы</span>' +
+      '<span class="chip neutral">' + note + '</span>';
+  }
+  renderTeaser();
+  vibrate(12);
+  later(function(){ advancing = false; go(idx+1); }, RM ? 250 : 800);
+}
+
+function restart(){
+  prevRun = loadRun();
+  sel = [null,null,null,null,null];
+  advancing = false;
+  go(1);
+}
+
+function share(){
+  var r = computeResult();
+  var text = "Мой индекс страданий — " + r.s + " из " + MAX_S + ". Я — «" + r.persona.name +
+    "», страдаю сильнее " + r.pct + "% прошедших. Спорим, у тебя хуже? " + SHARE_URL;
+  if(navigator.share){
+    navigator.share({ text:text }).catch(function(){});
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ toast("Скопировано — кидай в чат"); },
+      function(){ legacyCopy(text); });
+  } else {
+    legacyCopy(text);
+  }
+}
+function legacyCopy(text){
+  try{
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    toast("Скопировано — кидай в чат");
+  }catch(e){ toast("Не вышло — сделай скриншот"); }
+}
+
+/* ---------- input ---------- */
+stage.addEventListener("click", function(e){
+  var opt = e.target.closest(".opt");
+  if(opt){ pick(+opt.dataset.q, +opt.dataset.j); return; }
+  if(e.target.closest("button")) return;
+  var rect = stage.getBoundingClientRect();
+  var x = e.clientX - rect.left;
+  if(x < rect.width*0.32){ if(idx>0) go(prevIndex()); }
+  else tryForward();
+});
+document.addEventListener("keydown", function(e){
+  if(e.key==="ArrowRight" || e.key===" ") tryForward();
+  else if(e.key==="ArrowLeft" && idx>0) go(prevIndex());
+});
+
+render();
+</script>
+</body>
+</html>

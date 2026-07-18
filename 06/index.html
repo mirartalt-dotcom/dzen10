@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>Замер дня — DZEN</title>
+<style>
+:root{
+  --paper:#F4F1EA; --zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F; --line:#DFDACE; --card:#FBFAF6;
+  --lime:#A8C96B; --lime-d:#56732E; --lime-l:#ECF0DD;
+  --terra:#C0563E; --terra-d:#8A3A28; --terra-l:#F4E3DD;
+  --mango:#C2791B; --grape:#7A5C93;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --spring:cubic-bezier(.34,1.42,.5,1);
+  --r:24px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,sans-serif;
+  min-height:100svh; line-height:1.35;
+}
+.wrap{max-width:520px;margin:0 auto;padding:20px 20px 48px;position:relative}
+.brand{
+  position:absolute;top:22px;right:20px;font-size:12px;letter-spacing:.22em;
+  color:var(--muted);font-weight:600;user-select:none
+}
+.view{display:none}
+.view.on{display:block;animation:fadeUp .55s var(--ease) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-size:34px;line-height:1.12;font-weight:700;letter-spacing:-.02em;margin:10px 0 12px}
+.sub{color:var(--muted);font-size:16px}
+
+.btn{
+  display:block;width:100%;border:none;cursor:pointer;font-family:inherit;
+  border-radius:var(--r);font-size:18px;font-weight:600;padding:19px 20px;
+  transition:transform .35s var(--spring), box-shadow .3s var(--ease), background .3s var(--ease);
+}
+.btn:active{transform:scale(.965)}
+.btn-primary{background:var(--ink);color:var(--card)}
+.btn-ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+
+/* ---- intro ---- */
+.hero{padding-top:56px}
+.week{display:flex;gap:8px;margin:22px 0 6px}
+.wcell{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.wsq{
+  width:100%;aspect-ratio:1/1;max-width:44px;border-radius:12px;
+  border:1.5px dashed var(--line);background:transparent;
+  transition:transform .4s var(--spring), background .3s var(--ease);
+}
+.wsq.good{background:var(--lime);border:none}
+.wsq.bad{background:var(--terra);border:none}
+.wsq.today-empty{border:1.5px solid var(--muted);animation:pulse 2.2s var(--ease) infinite}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+.wlab{font-size:11px;color:var(--muted)}
+.streakline{display:flex;align-items:center;gap:8px;margin:14px 0 0;font-size:15px;color:var(--ink);font-weight:600}
+.streakline .dead{color:var(--muted);font-weight:400}
+.warn{
+  margin-top:14px;background:var(--terra-l);color:var(--terra-d);
+  border-radius:16px;padding:12px 16px;font-size:14px;font-weight:600;
+  display:none;animation:fadeUp .5s var(--ease) both
+}
+.warn.on{display:block}
+.cta{margin-top:26px}
+.hint{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
+
+/* ---- fact ---- */
+.fact{
+  margin-top:30px;background:var(--card);border:1px solid var(--line);
+  border-radius:20px;padding:16px 18px;
+}
+.fact .fl{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mango);font-weight:700;margin-bottom:6px}
+.fact p{font-size:14.5px;color:var(--ink)}
+
+/* ---- quiz ---- */
+.qtop{display:flex;justify-content:space-between;align-items:center;padding-top:8px;margin-bottom:8px}
+.qcount{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.06em}
+.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:34px}
+.bar i{display:block;height:100%;width:0;background:var(--lime-d);border-radius:2px;transition:width .5s var(--ease)}
+.qcard{
+  background:var(--card);border:1px solid var(--line);border-radius:28px;
+  padding:34px 24px 24px;min-height:300px;display:flex;flex-direction:column;
+  transition:transform .45s var(--spring), opacity .35s var(--ease);
+}
+.qcard.out{transform:translateX(-40px) scale(.96);opacity:0}
+.qcard.in{transform:translateX(40px) scale(.96);opacity:0;transition:none}
+.qtitle{font-size:26px;font-weight:700;letter-spacing:-.01em;line-height:1.18}
+.qsub{color:var(--muted);font-size:15px;margin-top:10px;flex:1}
+.qbtns{display:flex;gap:12px;margin-top:26px}
+.qbtn{
+  flex:1;border:none;cursor:pointer;font-family:inherit;font-size:19px;font-weight:700;
+  padding:22px 0;border-radius:22px;transition:transform .35s var(--spring);
+}
+.qbtn:active{transform:scale(.94)}
+.qbtn.yes{background:var(--lime);color:var(--lime-d)}
+.qbtn.no{background:var(--terra-l);color:var(--terra-d)}
+.qfeed{
+  height:26px;margin-top:16px;text-align:center;font-size:14px;font-weight:600;
+  color:var(--muted);opacity:0;transform:translateY(6px);
+  transition:opacity .25s var(--ease), transform .3s var(--spring);
+}
+.qfeed.on{opacity:1;transform:none}
+.qfeed .h{color:var(--lime-d)} .qfeed .p{color:var(--terra)}
+
+/* ---- result ---- */
+.calc{padding-top:110px;text-align:center;color:var(--muted);font-size:17px}
+.calc .dots::after{content:'';animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+.rstep{opacity:0;transform:translateY(16px);transition:opacity .55s var(--ease), transform .6s var(--spring)}
+.rstep.show{opacity:1;transform:none}
+.rnumwrap{text-align:center;padding-top:26px}
+.rlabel{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.rnum{font-size:104px;font-weight:800;letter-spacing:-.04em;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums}
+.rnum small{font-size:26px;font-weight:600;color:var(--muted);letter-spacing:0}
+.rphrase{text-align:center;font-size:19px;font-weight:600;margin-top:14px;padding:0 6px;line-height:1.35}
+.rgrid{text-align:center;font-size:26px;letter-spacing:4px;margin-top:18px;user-select:all}
+.balance{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px}
+.brow{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600}
+.brow+.brow{margin-top:12px}
+.brow .bl{width:86px;flex-shrink:0}
+.btrack{flex:1;height:10px;background:var(--paper);border-radius:5px;overflow:hidden}
+.btrack i{display:block;height:100%;width:0;border-radius:5px;transition:width 1s var(--ease) .15s}
+.bh i{background:var(--lime)} .bp i{background:var(--terra)}
+.bval{width:30px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.rweek{margin-top:26px}
+.rstreak{text-align:center;font-size:16px;font-weight:700;margin-bottom:4px}
+
+/* ---- dzen flip ---- */
+.dzen{
+  margin-top:30px;background:var(--zen);border-radius:28px;padding:28px 24px;
+  display:flex;gap:20px;align-items:center;overflow:hidden;
+}
+.dz-txt h2{font-size:21px;font-weight:700;letter-spacing:-.01em;line-height:1.22}
+.dz-txt p{color:var(--muted);font-size:14px;margin-top:8px}
+.dz-txt .where{margin-top:12px;font-size:12.5px;color:var(--lime-d);font-weight:700;letter-spacing:.06em}
+.can{
+  flex-shrink:0;width:86px;height:150px;border-radius:16px 16px 18px 18px;position:relative;
+  background:linear-gradient(160deg,#BCD684 0%,var(--lime) 45%,#8FB350 100%);
+  box-shadow:inset -10px 0 18px rgba(86,115,46,.28), inset 8px 0 14px rgba(255,255,255,.35), 0 14px 26px -12px rgba(86,115,46,.5);
+  cursor:pointer;transition:transform .5s var(--spring);
+}
+.can:active{transform:scale(.95) rotate(-2deg)}
+.can::before{ /* крышка */
+  content:'';position:absolute;top:-5px;left:6px;right:6px;height:12px;border-radius:50%;
+  background:linear-gradient(180deg,#E8E6DC,#C9C6B8);
+  box-shadow:inset 0 -2px 3px rgba(0,0,0,.14);
+}
+.can::after{ /* блик */
+  content:'';position:absolute;top:14px;bottom:10px;left:12px;width:9px;border-radius:5px;
+  background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.05));
+}
+.can span{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(180deg);
+  writing-mode:vertical-rl;font-size:24px;font-weight:800;letter-spacing:.34em;color:var(--lime-d);
+}
+.can .bub{position:absolute;border-radius:50%;background:rgba(255,255,255,.5);opacity:0}
+.can.fizz .bub{animation:bub 1.1s var(--ease) both}
+@keyframes bub{0%{opacity:0;transform:translateY(0)}25%{opacity:.9}100%{opacity:0;transform:translateY(-46px)}}
+
+/* ---- share ---- */
+.share{margin-top:26px;display:flex;flex-direction:column;gap:10px}
+.copied{
+  position:fixed;left:50%;bottom:34px;transform:translate(-50%,80px);
+  background:var(--ink);color:var(--card);font-size:14px;font-weight:600;
+  padding:12px 22px;border-radius:100px;transition:transform .45s var(--spring);
+  pointer-events:none;z-index:9;
+}
+.copied.on{transform:translate(-50%,0)}
+.timer{margin-top:22px;text-align:center;color:var(--muted);font-size:14px}
+.timer b{color:var(--ink);font-variant-numeric:tabular-nums}
+.again-note{margin-top:6px;text-align:center;color:var(--muted);font-size:12.5px}
+
+@media (min-width:700px){
+  .hero{padding-top:80px}
+  h1{font-size:40px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">DZEN</div>
+
+  <!-- ВХОД -->
+  <section class="view" id="v-intro">
+    <div class="hero">
+      <div class="eyebrow">Замер дня — <span id="i-date"></span></div>
+      <h1>Как прошли последние 24&nbsp;часа?</h1>
+      <p class="sub">Пять вопросов про вчера. Минута — и у дня появится индекс.</p>
+
+      <div class="week" id="i-week"></div>
+      <div class="streakline" id="i-streak"></div>
+      <div class="warn" id="i-warn"></div>
+
+      <div class="cta">
+        <button class="btn btn-primary" id="i-start">Начать замер</button>
+        <p class="hint">Один замер в день. Как утренний кофе, только быстрее.</p>
+      </div>
+
+      <div class="fact">
+        <div class="fl">Факт дня</div>
+        <p id="i-fact"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ЗАМЕР -->
+  <section class="view" id="v-quiz">
+    <div class="qtop">
+      <div class="eyebrow">Замер дня</div>
+      <div class="qcount" id="q-count"></div>
+    </div>
+    <div class="bar"><i id="q-bar"></i></div>
+    <div class="qcard" id="q-card">
+      <div class="qtitle" id="q-title"></div>
+      <div class="qsub" id="q-sub"></div>
+      <div class="qbtns">
+        <button class="qbtn yes" id="q-yes">Да</button>
+        <button class="qbtn no" id="q-no">Нет</button>
+      </div>
+    </div>
+    <div class="qfeed" id="q-feed"></div>
+  </section>
+
+  <!-- РЕЗУЛЬТАТ -->
+  <section class="view" id="v-result">
+    <div class="calc" id="r-calc">Считаем вчерашний день<span class="dots"></span></div>
+    <div id="r-body" hidden>
+      <div class="rstep rnumwrap" id="rs-num">
+        <div class="rlabel">Индекс дня — <span id="r-date"></span></div>
+        <div class="rnum"><span id="r-num">0</span><small>/100</small></div>
+      </div>
+      <p class="rstep rphrase" id="r-phrase"></p>
+      <div class="rstep rgrid" id="r-grid"></div>
+
+      <div class="rstep balance">
+        <div class="brow bh"><span class="bl">Польза</span><span class="btrack"><i id="b-h"></i></span><span class="bval" id="bv-h"></span></div>
+        <div class="brow bp"><span class="bl">Страдания</span><span class="btrack"><i id="b-p"></i></span><span class="bval" id="bv-p"></span></div>
+      </div>
+
+      <div class="rstep rweek">
+        <div class="rstreak" id="r-streak"></div>
+        <div class="week" id="r-week"></div>
+      </div>
+
+      <div class="rstep dzen" id="r-dzen">
+        <div class="dz-txt">
+          <h2>Минус страдания, та&nbsp;же польза — DZEN</h2>
+          <p>0 г сахара, 3 вида пребиотика, ≈4 г клетчатки на банку. Единственная строчка дня, где платят удовольствием.</p>
+          <div class="where">Ищи в Додо Пицце</div>
+        </div>
+        <div class="can" id="r-can" role="img" aria-label="Банка DZEN">
+          <span>DZEN</span>
+          <i class="bub" style="width:6px;height:6px;left:24px;bottom:26px"></i>
+          <i class="bub" style="width:4px;height:4px;left:48px;bottom:34px;animation-delay:.12s"></i>
+          <i class="bub" style="width:5px;height:5px;left:36px;bottom:18px;animation-delay:.22s"></i>
+        </div>
+      </div>
+
+      <div class="rstep fact">
+        <div class="fl">Факт дня</div>
+        <p id="r-fact"></p>
+      </div>
+
+      <div class="rstep share">
+        <button class="btn btn-primary" id="s-copy">Скопировать результат</button>
+        <button class="btn btn-ghost" id="s-share" hidden>Поделиться</button>
+      </div>
+
+      <div class="rstep">
+        <p class="timer" id="r-timer"></p>
+        <p class="again-note">Замер — один в день. Завтра дню снова понадобится индекс.</p>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="copied" id="toast">Скопировано — кидай в чат</div>
+
+<script>
+'use strict';
+(function(){
+
+/* ===== данные ===== */
+var HABITS=[
+  {id:'sleep', q:'Вчера лёг до 23:00?', sub:'вместо второго сезона, который сам себя не досмотрит', h:18, p:14, no:'сериал победил'},
+  {id:'sweets',q:'Обошёлся без сладкого к чаю?', sub:'вместо печенья, которое так грустно на тебя смотрит', h:12, p:17, no:'печенье победило'},
+  {id:'gym',  q:'Дошёл до зала через лень?', sub:'вместо дивана, который считал тебя своим', h:23, p:15, no:'диван победил'},
+  {id:'phone',q:'Не залипал в телефоне?', sub:'вместо ленты, в которую зашёл на минутку ещё час назад', h:10, p:12, no:'лента победила'},
+  {id:'wb',   q:'Ничего не купил из вайлбериса?', sub:'вместо корзины, где уже лежала твоя новая жизнь', h:8, p:10, no:'корзина победила'}
+];
+var MAX_H=71, MAX_P=68;
+var PHRASES=[
+  'Пока ты просто живёшь. Ни пользы, ни боли.',
+  'Один подвиг. Здоровье кивнуло, диван обиделся.',
+  'Два из пяти. Оплачено силой воли, сдачи не будет.',
+  'Три подвига за день. Ты почти святой, только злой и голодный.',
+  'Четыре из пяти. Нимб уже светится, терпение уже мигает.',
+  'Пять из пяти. Идеальный человек — и абсолютно вымотанный.'
+];
+var FACTS=[
+  'В 0,33 л обычной газировки — примерно 7–9 ложек сахара. В DZEN — ноль.',
+  'Пребиотики — это не лекарство. Это просто ужин для бактерий, которые живут с тобой.',
+  'Норма клетчатки — 25–30 г в день. Большинство из нас стабильно недобирает.',
+  '≈4 г клетчатки в банке DZEN — как в паре киви. Только киви не шипят.',
+  'Инулин делают из цикория. Звучит скучно, работает как еда для микробиома.',
+  '«Без сахара» раньше означало «без вкуса». Манго-маракуйя с этим не согласна.',
+  '~20 ккал на 100 г — у DZEN меньше калорий, чем у яблочного сока.',
+  'Пузырьки ни в чём не виноваты. Вопрос всегда был к сахару.',
+  'Сладкое к чаю чаще берут не от голода, а по привычке рук. Руки можно переучить.',
+  'Три вида пребиотика в одной банке. Бактерии в курсе, ты — теперь тоже.',
+  'Банка DZEN закрывает примерно седьмую часть дневной нормы клетчатки.',
+  'Лайм-мята — это когда «полезное» впервые не звучит как приговор.'
+];
+var W_LAB=['вс','пн','вт','ср','чт','пт','сб'];
+var MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+var LS_KEY='dzen_zamer_v1';
+
+/* ===== утилиты ===== */
+function $(id){return document.getElementById(id)}
+function dkey(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function todayKey(){return dkey(new Date())}
+function fmtDate(d){return d.getDate()+' '+MONTHS[d.getMonth()]}
+function fmtShort(d){
+  return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');
+}
+function load(){
+  try{ var raw=localStorage.getItem(LS_KEY); if(raw){var o=JSON.parse(raw); if(o && o.days) return o;} }catch(e){}
+  return {days:{}};
+}
+function save(st){ try{ localStorage.setItem(LS_KEY, JSON.stringify(st)); }catch(e){} }
+function buzz(ms){ if(navigator.vibrate){ try{navigator.vibrate(ms)}catch(e){} } }
+var reduced=false;
+try{ reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+
+/* звук: щёлк + «пшш», всё WebAudio, лениво */
+var actx=null;
+function audio(){
+  if(actx) return actx;
+  try{ var AC=window.AudioContext||window.webkitAudioContext; if(AC) actx=new AC(); }catch(e){}
+  return actx;
+}
+function click(){
+  var c=audio(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.value=620;
+    g.gain.setValueAtTime(.06,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.07);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+.08);
+  }catch(e){}
+}
+function pshh(){
+  var c=audio(); if(!c) return;
+  try{
+    var len=c.sampleRate*.5, buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0);
+    for(var i=0;i<len;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2); }
+    var src=c.createBufferSource(); src.buffer=buf;
+    var f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=2400;
+    var g=c.createGain(); g.gain.setValueAtTime(.16,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.5);
+    src.connect(f); f.connect(g); g.connect(c.destination); src.start();
+  }catch(e){}
+}
+
+/* ===== логика ===== */
+var state=load();
+
+function calcIndex(answers){
+  var h=0,p=0;
+  for(var i=0;i<HABITS.length;i++){ if(answers[i]){ h+=HABITS[i].h; p+=HABITS[i].p; } }
+  return {h:h, p:p, index:Math.round(h/MAX_H*100)};
+}
+function yesCount(answers){ var n=0; for(var i=0;i<answers.length;i++) if(answers[i]) n++; return n; }
+function emojiGrid(answers){
+  var s=''; for(var i=0;i<answers.length;i++) s+=answers[i]?'🟩':'🟥'; return s;
+}
+function calcStreak(){
+  var d=new Date();
+  if(!state.days[dkey(d)]) d.setDate(d.getDate()-1);
+  var n=0;
+  while(state.days[dkey(d)]){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+function factOfDay(){
+  var d=new Date();
+  var epochDays=Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/86400000);
+  return FACTS[((epochDays%FACTS.length)+FACTS.length)%FACTS.length];
+}
+function msToMidnight(){
+  var n=new Date();
+  var m=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1,0,0,0);
+  return m.getTime()-n.getTime();
+}
+function fmtHM(ms){
+  var totalMin=Math.max(0,Math.floor(ms/60000));
+  var h=Math.floor(totalMin/60), m=totalMin%60;
+  return h+':'+String(m).padStart(2,'0');
+}
+function pluralDays(n){
+  var m10=n%10, m100=n%100;
+  if(m10===1 && m100!==11) return 'день';
+  if(m10>=2 && m10<=4 && (m100<12 || m100>14)) return 'дня';
+  return 'дней';
+}
+
+/* ===== недельная полоска ===== */
+function renderWeek(el){
+  el.innerHTML='';
+  var today=todayKey();
+  for(var i=6;i>=0;i--){
+    var d=new Date(); d.setDate(d.getDate()-i);
+    var k=dkey(d), rec=state.days[k];
+    var cell=document.createElement('div'); cell.className='wcell';
+    var sq=document.createElement('div'); sq.className='wsq';
+    if(rec){ sq.classList.add(rec.i>=50?'good':'bad'); }
+    else if(k===today){ sq.classList.add('today-empty'); }
+    var lab=document.createElement('div'); lab.className='wlab';
+    lab.textContent=(k===today)?'сегодня':W_LAB[d.getDay()];
+    cell.appendChild(sq); cell.appendChild(lab); el.appendChild(cell);
+  }
+}
+
+/* ===== экраны ===== */
+function show(viewId){
+  var vs=document.querySelectorAll('.view');
+  for(var i=0;i<vs.length;i++) vs[i].classList.remove('on');
+  $(viewId).classList.add('on');
+  window.scrollTo(0,0);
+}
+
+/* --- вход --- */
+function renderIntro(){
+  var now=new Date();
+  $('i-date').textContent=fmtDate(now);
+  $('i-fact').textContent=factOfDay();
+  renderWeek($('i-week'));
+  var streak=calcStreak();
+  var sEl=$('i-streak');
+  if(streak>0){
+    sEl.innerHTML='Серия: '+streak+' '+pluralDays(streak)+' 🔥';
+  }else{
+    var hasAny=false; for(var k in state.days){ hasAny=true; break; }
+    sEl.innerHTML=hasAny?'<span class="dead">Серия сгорела. Сегодня можно начать новую.</span>'
+                        :'<span class="dead">Первый замер — начало серии.</span>';
+  }
+  var warn=$('i-warn'); warn.classList.remove('on');
+  var y=new Date(); y.setDate(y.getDate()-1);
+  if(streak>0 && state.days[dkey(y)] && !state.days[todayKey()]){
+    var ms=msToMidnight();
+    if(ms<=6*3600000){
+      warn.textContent='Серия сгорит через '+fmtHM(ms)+'. Замер занимает минуту.';
+      warn.classList.add('on');
+    }
+  }
+  show('v-intro');
+}
+
+/* --- замер --- */
+var answers=[], qi=0;
+function startQuiz(){
+  answers=[]; qi=0;
+  renderQ(true);
+  show('v-quiz');
+}
+function renderQ(first){
+  var hb=HABITS[qi];
+  $('q-count').textContent=(qi+1)+' из '+HABITS.length;
+  $('q-bar').style.width=((qi)/HABITS.length*100)+'%';
+  $('q-title').textContent=hb.q;
+  $('q-sub').textContent=hb.sub;
+  var card=$('q-card');
+  if(!first && !reduced){
+    card.classList.add('in');
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      card.classList.remove('in');
+      card.style.transition='';
+    });});
+  }
+}
+var busy=false;
+function answer(yes){
+  if(busy) return; busy=true;
+  buzz(12); click();
+  var hb=HABITS[qi];
+  answers.push(yes?1:0);
+  var feed=$('q-feed');
+  feed.innerHTML=yes
+    ? '<span class="h">+'+hb.h+' пользы</span> · <span class="p">+'+hb.p+' страданий</span>'
+    : hb.no;
+  feed.classList.add('on');
+  $('q-bar').style.width=((qi+1)/HABITS.length*100)+'%';
+  var card=$('q-card');
+  setTimeout(function(){
+    feed.classList.remove('on');
+    if(qi+1>=HABITS.length){ finishQuiz(); busy=false; return; }
+    if(!reduced) card.classList.add('out');
+    setTimeout(function(){
+      card.classList.remove('out');
+      qi++;
+      renderQ(false);
+      busy=false;
+    }, reduced?0:280);
+  }, reduced?250:560);
+}
+function finishQuiz(){
+  var r=calcIndex(answers);
+  var rec={a:answers.slice(), i:r.index, h:r.h, p:r.p};
+  state.days[todayKey()]=rec;
+  save(state);
+  showResult(rec, true);
+}
+
+/* --- результат --- */
+var timerInt=null;
+function showResult(rec, fresh){
+  show('v-result');
+  var now=new Date();
+  $('r-date').textContent=fmtDate(now);
+  $('r-phrase').textContent=PHRASES[yesCount(rec.a)];
+  $('r-grid').textContent=emojiGrid(rec.a);
+  $('bv-h').textContent=rec.h; $('bv-p').textContent=rec.p;
+  $('r-fact').textContent=factOfDay();
+  var streak=calcStreak();
+  $('r-streak').textContent='Серия замеров: '+streak+' '+pluralDays(streak)+' 🔥';
+  renderWeek($('r-week'));
+  if(navigator.share) $('s-share').hidden=false;
+
+  var calc=$('r-calc'), body=$('r-body');
+  var steps=document.querySelectorAll('.rstep');
+  var i;
+
+  function setBars(){
+    $('b-h').style.width=(rec.h/MAX_H*100)+'%';
+    $('b-p').style.width=(rec.p/MAX_P*100)+'%';
+  }
+  function countUp(){
+    var el=$('r-num'), target=rec.index;
+    if(reduced || !fresh){ el.textContent=target; return; }
+    var t0=null, dur=1100;
+    function tick(ts){
+      if(!t0) t0=ts;
+      var k=Math.min(1,(ts-t0)/dur);
+      k=1-Math.pow(1-k,3);
+      el.textContent=Math.round(target*k);
+      if(k<1) requestAnimationFrame(tick);
+      else { el.textContent=target; buzz(24); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  if(fresh && !reduced){
+    calc.style.display='block'; body.hidden=true;
+    for(i=0;i<steps.length;i++) steps[i].classList.remove('show');
+    setTimeout(function(){
+      calc.style.display='none'; body.hidden=false;
+      var delay=0;
+      for(var j=0;j<steps.length;j++){
+        (function(el,d){
+          setTimeout(function(){
+            el.classList.add('show');
+            if(el.id==='rs-num') countUp();
+            if(el.querySelector && el.querySelector('#b-h')) setBars();
+            if(el.id==='r-dzen'){ fizzCan(); }
+          }, d);
+        })(steps[j], delay);
+        delay+= (steps[j].id==='rs-num') ? 1300 : 520;
+      }
+    }, 1400);
+  }else{
+    calc.style.display='none'; body.hidden=false;
+    for(i=0;i<steps.length;i++) steps[i].classList.add('show');
+    countUp(); setBars();
+  }
+  startTimer();
+}
+function fizzCan(){
+  var can=$('r-can');
+  can.classList.remove('fizz');
+  void can.offsetWidth;
+  can.classList.add('fizz');
+}
+function startTimer(){
+  if(timerInt) clearInterval(timerInt);
+  function upd(){
+    var ms=msToMidnight();
+    if(ms<=1000){ location.reload(); return; }
+    $('r-timer').innerHTML='Новый замер — через <b>'+fmtHM(ms)+'</b>';
+  }
+  upd();
+  timerInt=setInterval(upd,15000);
+}
+
+/* --- шеринг --- */
+function shareText(){
+  var rec=state.days[todayKey()];
+  if(!rec) return '';
+  var streak=calcStreak();
+  return 'Замер дня '+fmtShort(new Date())+' — '+emojiGrid(rec.a)+' — индекс '+rec.i+'. Серия: '+streak+' 🔥\n'
+       + 'Спорим, у тебя меньше? dzen';
+}
+function copyResult(){
+  var t=shareText(); if(!t) return;
+  buzz(12); click();
+  function done(){
+    var toast=$('toast');
+    toast.classList.add('on');
+    setTimeout(function(){ toast.classList.remove('on'); },2200);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ legacyCopy(t); done(); });
+  }else{ legacyCopy(t); done(); }
+}
+function legacyCopy(t){
+  var ta=document.createElement('textarea');
+  ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+function nativeShare(){
+  var t=shareText(); if(!t) return;
+  buzz(12);
+  if(navigator.share){ navigator.share({text:t}).catch(function(){}); }
+  else copyResult();
+}
+
+/* ===== события ===== */
+$('i-start').addEventListener('click', function(){ buzz(12); click(); startQuiz(); });
+$('q-yes').addEventListener('click', function(){ answer(true); });
+$('q-no').addEventListener('click', function(){ answer(false); });
+$('s-copy').addEventListener('click', copyResult);
+$('s-share').addEventListener('click', nativeShare);
+$('r-can').addEventListener('click', function(){ buzz(12); pshh(); fizzCan(); });
+
+/* ===== старт ===== */
+var todayRec=state.days[todayKey()];
+if(todayRec){ showResult(todayRec, false); }
+else{ renderIntro(); }
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>DZEN — весы страданий</title>
+<style>
+  :root{
+    --paper:#F4F1EA; --zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F;
+    --line:#DFDACE; --card:#FBFAF6;
+    --lime:#A8C96B; --lime-d:#56732E; --lime-l:#ECF0DD;
+    --terra:#C0563E; --terra-d:#8A3A28; --terra-l:#F4E3DD;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --spring:cubic-bezier(.34,1.42,.5,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+    background:var(--paper); color:var(--ink);
+    transition:background 1.2s var(--ease);
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  body.zen{background:var(--zen)}
+  .wrap{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;padding:0 0 20px}
+
+  /* ---------- header ---------- */
+  header{padding:18px 22px 2px;position:relative}
+  .brandmark{position:absolute;top:20px;right:22px;font-size:11px;font-weight:800;letter-spacing:.22em;color:var(--muted);opacity:.75}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  h1{
+    font-family:"Cormorant Garamond","Times New Roman",Georgia,serif;
+    font-weight:600;font-size:31px;line-height:1.12;letter-spacing:-.01em;max-width:20ch;
+  }
+  .sub{margin-top:8px;font-size:14.5px;line-height:1.45;color:var(--muted);max-width:36ch}
+
+  /* ---------- stage ---------- */
+  .stage{position:relative;margin-top:2px}
+  .stage svg{display:block;width:100%;height:auto}
+  .panlbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-anchor:middle}
+  .wnum{font-size:9px;font-weight:800;text-anchor:middle;fill:#F4E3DD}
+  .canletter{font-size:8px;font-weight:800;text-anchor:middle;fill:#2F4416;letter-spacing:.05em}
+
+  .float{
+    position:absolute;max-width:210px;font-size:12.5px;line-height:1.35;font-style:italic;
+    color:var(--terra-d);background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:8px 12px;transform:translate(-50%,0);
+    box-shadow:0 8px 24px rgba(43,42,38,.08);pointer-events:none;opacity:0;
+    animation:floatUp 2.6s var(--ease) forwards;z-index:5;text-align:center;
+  }
+  @keyframes floatUp{
+    0%{opacity:0;transform:translate(-50%,10px) scale(.94)}
+    12%{opacity:1;transform:translate(-50%,-6px) scale(1)}
+    78%{opacity:1;transform:translate(-50%,-26px)}
+    100%{opacity:0;transform:translate(-50%,-40px)}
+  }
+
+  .quip{
+    min-height:48px;padding:2px 32px;display:flex;align-items:center;justify-content:center;
+    text-align:center;font-size:15px;line-height:1.4;color:var(--ink);
+  }
+  .quip.hint{color:var(--muted);font-size:14px}
+  .quip.final{
+    font-family:"Cormorant Garamond","Times New Roman",Georgia,serif;
+    font-size:22px;color:var(--lime-d);font-weight:600;
+  }
+  .quip span{opacity:0;transform:translateY(8px);display:inline-block;
+    transition:opacity .5s var(--ease),transform .5s var(--spring)}
+  .quip span.on{opacity:1;transform:none}
+
+  .score{
+    align-self:center;display:flex;gap:14px;align-items:baseline;margin:6px auto 4px;
+    background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 18px;
+    font-size:13px;color:var(--muted);
+  }
+  .score b{font-size:17px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .score .s b{color:var(--terra)}
+  .score .j b{color:var(--lime-d)}
+  .score .vs{font-size:12px;color:var(--line)}
+
+  /* ---------- tray ---------- */
+  .trayTitle{padding:14px 22px 8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .tray{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px}
+  .cardW{
+    background:var(--card);border:1px solid var(--line);border-radius:22px;
+    padding:12px 8px 11px;display:flex;flex-direction:column;align-items:center;gap:7px;
+    text-align:center;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;
+    transition:transform .35s var(--spring),opacity .45s var(--ease),box-shadow .35s var(--ease);
+  }
+  .cardW:active{cursor:grabbing}
+  .cardW.lifting{transform:scale(.94);opacity:.55}
+  .cardW.used{opacity:.32;pointer-events:none;transform:scale(.97)}
+  .cardW .ttl{font-size:12.5px;font-weight:600;line-height:1.25;min-height:31px;display:flex;align-items:center}
+  .badge{font-size:11px;font-weight:700;color:var(--terra-d);background:var(--terra-l);
+    border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums}
+  .cardW.used .badge{background:transparent;color:var(--muted)}
+  .cardW.dzen{border-color:#CBD9A8;background:linear-gradient(180deg,var(--card),#F6F8EC)}
+  .cardW.dzen .badge{color:var(--lime-d);background:var(--lime-l)}
+
+  .ghost{position:fixed;z-index:50;pointer-events:none;transform:translate(-50%,-55%);
+    filter:drop-shadow(0 10px 18px rgba(43,42,38,.22))}
+
+  footer{padding:16px 22px 6px;text-align:center}
+  .memo{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .url{margin-top:6px;font-size:11px;letter-spacing:.06em;color:var(--muted);opacity:.65}
+
+  /* ---------- finale ---------- */
+  .snapBtnWrap{display:flex;justify-content:center;padding:10px 22px 0}
+  .snapBtn{
+    appearance:none;border:0;border-radius:999px;padding:14px 26px;font-size:15px;font-weight:700;
+    background:var(--ink);color:var(--paper);cursor:pointer;opacity:0;transform:translateY(12px) scale(.96);
+    transition:opacity .6s var(--ease),transform .6s var(--spring);
+  }
+  .snapBtn.on{opacity:1;transform:none}
+  .snapBtn:active{transform:scale(.97)}
+
+  .overlay{
+    position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;
+    background:rgba(43,42,38,.42);padding:18px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  }
+  .overlay.on{display:flex}
+  .polaroid{
+    width:100%;max-width:350px;max-height:94dvh;overflow:auto;background:var(--card);
+    border-radius:28px;padding:20px 20px 16px;text-align:center;
+    box-shadow:0 30px 80px rgba(43,42,38,.35);
+    animation:popIn .55s var(--spring);
+  }
+  @keyframes popIn{from{opacity:0;transform:translateY(26px) scale(.94)}to{opacity:1;transform:none}}
+  .polaroid .eyebrow{margin-bottom:4px}
+  .miniScale svg{width:88%;height:auto;margin:0 auto;display:block}
+  .bigscore{display:flex;justify-content:center;align-items:baseline;gap:10px;margin:2px 0 2px;
+    font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+  .bigscore .n{font-size:46px;font-weight:800}
+  .bigscore .ns{color:var(--terra)}
+  .bigscore .nj{color:var(--lime-d)}
+  .bigscore .colon{font-size:30px;color:var(--muted);font-weight:300}
+  .bigscore-l{display:flex;justify-content:center;gap:38px;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .verdict{font-size:16px;font-weight:700;margin-bottom:4px}
+  .finalline{
+    font-family:"Cormorant Garamond","Times New Roman",Georgia,serif;
+    font-size:21px;color:var(--lime-d);margin-bottom:10px;
+  }
+  .rec{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+  .purl{font-size:10.5px;letter-spacing:.06em;color:var(--muted);opacity:.7;margin-bottom:14px}
+  .btnrow{display:flex;gap:10px}
+  .btn{flex:1;appearance:none;border:0;border-radius:16px;padding:13px 10px;font-size:14px;font-weight:700;cursor:pointer;
+    transition:transform .2s var(--spring)}
+  .btn:active{transform:scale(.96)}
+  .btn.primary{background:var(--lime);color:#243213}
+  .btn.ghost2{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .again{margin-top:10px;background:none;border:0;font-size:12.5px;color:var(--muted);
+    text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.01ms !important;transition-duration:.15s !important}
+  }
+  @media (min-width:560px){ h1{font-size:36px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brandmark">DZEN</div>
+    <div class="eyebrow" id="dayLabel">Замер дня</div>
+    <h1>Сколько весит твоё здоровье?</h1>
+    <p class="sub">Положи свои подвиги на весы. Потом положи банку — и посмотри, что перевесит.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <svg id="scaleSvg" viewBox="0 0 390 262" aria-label="Аптечные весы">
+      <defs>
+        <linearGradient id="terrG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#C0563E"/><stop offset="1" stop-color="#8A3A28"/>
+        </linearGradient>
+        <linearGradient id="limeG" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#BFD98A"/><stop offset=".55" stop-color="#A8C96B"/><stop offset="1" stop-color="#8FB554"/>
+        </linearGradient>
+        <g id="gwSym">
+          <path d="M-7,-18 a7,7 0 0 1 14,0 l-3.4,0 a3.6,3.6 0 0 0 -7.2,0 Z" fill="#8A3A28"/>
+          <path d="M-12,0 C-12,-12 -7,-16.5 0,-16.5 C7,-16.5 12,-12 12,0 Z" fill="url(#terrG)"/>
+        </g>
+        <g id="canSym">
+          <rect x="-13" y="-46" width="26" height="46" rx="7" fill="url(#limeG)"/>
+          <rect x="-9.5" y="-44" width="5.5" height="42" rx="2.75" fill="#FFFFFF" opacity=".2"/>
+          <rect x="-13" y="-46" width="26" height="6" rx="3" fill="#56732E"/>
+          <text class="canletter" x="0" y="-30">D</text>
+          <text class="canletter" x="0" y="-21.5">Z</text>
+          <text class="canletter" x="0" y="-13">E</text>
+          <text class="canletter" x="0" y="-4.5">N</text>
+        </g>
+      </defs>
+
+      <!-- base & pillar -->
+      <ellipse cx="195" cy="248" rx="62" ry="7" fill="#DFDACE"/>
+      <rect x="163" y="238" width="64" height="8" rx="4" fill="#2B2A26"/>
+      <rect x="190.5" y="80" width="9" height="162" rx="4.5" fill="#2B2A26"/>
+
+      <!-- dial ticks (static) -->
+      <g id="ticks" stroke="#DFDACE" stroke-width="2" stroke-linecap="round"></g>
+
+      <!-- beam -->
+      <g id="beamG">
+        <line x1="195" y1="78" x2="195" y2="46" stroke="#C0563E" stroke-width="2.4" stroke-linecap="round"/>
+        <rect x="73" y="74.5" width="244" height="7" rx="3.5" fill="#2B2A26"/>
+        <circle cx="73" cy="78" r="5" fill="#2B2A26"/>
+        <circle cx="317" cy="78" r="5" fill="#2B2A26"/>
+      </g>
+      <circle cx="195" cy="78" r="7" fill="#2B2A26"/>
+      <circle cx="195" cy="78" r="2.4" fill="#F4F1EA"/>
+
+      <!-- left pan: suffering -->
+      <g id="panL">
+        <path d="M0,4 L-30,44 M0,4 L0,46 M0,4 L30,44" stroke="#6E6A5F" stroke-width="1.3" fill="none"/>
+        <path d="M-34,45 C-28,58 28,58 34,45 Z" fill="#F4E3DD" stroke="#C0563E" stroke-width="2" stroke-linejoin="round"/>
+        <g id="wL"></g>
+        <text class="panlbl" x="0" y="74" fill="#8A3A28">СТРАДАНИЕ</text>
+      </g>
+
+      <!-- right pan: joy -->
+      <g id="panR">
+        <path d="M0,4 L-30,44 M0,4 L0,46 M0,4 L30,44" stroke="#6E6A5F" stroke-width="1.3" fill="none"/>
+        <path d="M-34,45 C-28,58 28,58 34,45 Z" fill="#ECF0DD" stroke="#56732E" stroke-width="2" stroke-linejoin="round"/>
+        <g id="wR"></g>
+        <text class="panlbl" x="0" y="74" fill="#56732E">КАЙФ</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="quip hint" id="quip"><span id="quipTxt" class="on">Возьми гирьку и положи её на весы.</span></div>
+
+  <div class="score">
+    <span class="s">Страдание <b id="sufN">0</b></span>
+    <span class="vs">•</span>
+    <span class="j">Кайф <b id="joyN">0</b></span>
+  </div>
+
+  <div class="snapBtnWrap"><button class="snapBtn" id="snapBtn">Сфотографировать весы</button></div>
+
+  <div class="trayTitle">Гирьки сегодняшнего дня</div>
+  <div class="tray" id="tray"></div>
+
+  <footer>
+    <div class="memo" id="memo"></div>
+    <div class="url">mirartalt-dotcom.github.io/dzen</div>
+  </footer>
+</div>
+
+<!-- finale overlay -->
+<div class="overlay" id="overlay">
+  <div class="polaroid" id="polaroid">
+    <div class="eyebrow" id="polaDay">Замер дня</div>
+    <div class="miniScale" id="miniScale"></div>
+    <div class="bigscore">
+      <span class="n ns" id="bigS">0</span><span class="colon">:</span><span class="n nj" id="bigJ">14</span>
+    </div>
+    <div class="bigscore-l"><span>страдание</span><span>кайф</span></div>
+    <div class="verdict" id="verdict">Банка победила.</div>
+    <div class="finalline">Польза, которую не надо терпеть.</div>
+    <div class="rec" id="recLine"></div>
+    <div class="purl">mirartalt-dotcom.github.io/dzen</div>
+    <div class="btnrow">
+      <button class="btn primary" id="shareBtn">Поделиться</button>
+      <button class="btn ghost2" id="closeBtn">Закрыть</button>
+    </div>
+    <button class="again" id="againBtn">Собрать весы заново</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(s){ return document.querySelector(s); };
+var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var SHARE_URL = 'mirartalt-dotcom.github.io/dzen';
+
+/* ---------- daily seed ---------- */
+function hash(s){
+  var h = 2166136261;
+  for (var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
+var now = new Date();
+var dayKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+var dayLabel = new Intl.DateTimeFormat('ru', { day:'numeric', month:'long' }).format(now);
+$('#dayLabel').textContent = 'Замер дня · ' + dayLabel;
+$('#polaDay').textContent = 'Замер дня · ' + dayLabel;
+
+var HABITS = [
+  { id:'sleep',  t:'Ложусь до 23:00',        c:'вместо второго сезона, который сам себя не досмотрит', base:14 },
+  { id:'sweets', t:'Не беру сладкое к чаю',  c:'вместо печенья, которое так грустно на тебя смотрит',  base:17 },
+  { id:'gym',    t:'Иду в зал через лень',   c:'вместо дивана, который считал тебя своим',             base:15 },
+  { id:'phone',  t:'Не залипаю в телефоне',  c:'вместо ленты, в которую зашёл на минутку ещё час назад', base:12 },
+  { id:'wb',     t:'Не купил из вайлбериса', c:'вместо корзины, где уже лежала твоя новая жизнь',      base:10 }
+];
+HABITS.forEach(function(h){
+  h.pain = clamp(h.base + (hash(dayKey + h.id) % 7) - 3, 6, 22);
+});
+
+/* ---------- storage ---------- */
+var LS = 'dzen-vesy-v1';
+function loadST(){ try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch(e){ return {}; } }
+function saveST(st){ try { localStorage.setItem(LS, JSON.stringify(st)); } catch(e){} }
+var st = loadST();
+(function initMemo(){
+  var m = '';
+  if (st.lastDate && st.lastDate !== dayKey && typeof st.lastPain === 'number'){
+    m = 'В прошлый замер твоё страдание весило ' + st.lastPain + '. Сегодня гирьки отлиты заново.';
+  } else if (st.best){
+    m = 'Твой рекорд: ' + st.best + ' страданий на одной чаше.';
+  } else {
+    m = 'Завтра гирьки будут весить по-другому.';
+  }
+  $('#memo').textContent = m;
+})();
+
+/* ---------- state ---------- */
+var placed = [];          // habits on left pan
+var canPlaced = false;    // can dropped on right pan
+var canActive = false;    // drama moment fired -> scale flips
+var extraAfter = 0;       // weights added after the can
+var finaleShown = false;
+
+/* ---------- svg refs & geometry ---------- */
+var svg = $('#scaleSvg'), beamG = $('#beamG'), panL = $('#panL'), panR = $('#panR');
+var wL = $('#wL'), wR = $('#wR'), stage = $('#stage');
+var PX = 195, PY = 78, B = 122;
+var deg = 0, vel = 0, lx = PX - B, ly = PY, rx = PX + B, ry = PY;
+var K = 38, C = 5.5;
+
+/* dial ticks */
+(function(){
+  var g = $('#ticks'), NS = 'http://www.w3.org/2000/svg';
+  [-20,-10,0,10,20].forEach(function(a){
+    var r1 = 36, r2 = (a === 0) ? 27 : 31, rad = a * Math.PI / 180;
+    var t = document.createElementNS(NS, 'line');
+    t.setAttribute('x1', PX + r1 * Math.sin(rad)); t.setAttribute('y1', PY - r1 * Math.cos(rad));
+    t.setAttribute('x2', PX + r2 * Math.sin(rad)); t.setAttribute('y2', PY - r2 * Math.cos(rad));
+    if (a === 0) t.setAttribute('stroke', '#C9C3B4');
+    g.appendChild(t);
+  });
+})();
+
+function targetDeg(t){
+  var leftSum = placed.reduce(function(s, h){ return s + h.pain; }, 0);
+  if (canActive) return clamp(19 - extraAfter * 1.2, 13, 19);
+  var base = leftSum > 0 ? -Math.min(22, 4 + leftSum * 0.35) : 0;
+  if (canPlaced) base -= 1.5; /* pre-drama dip */
+  if (leftSum === 0 && !canPlaced && !reduced) base = Math.sin(t / 900) * 1.6; /* idle sway */
+  return base;
+}
+
+var lastT = 0;
+function frame(ts){
+  if (!lastT) lastT = ts;
+  var dt = Math.min(0.032, (ts - lastT) / 1000); lastT = ts;
+  var tt = targetDeg(ts);
+  if (reduced){
+    deg += (tt - deg) * Math.min(1, dt * 8);
+  } else {
+    var acc = K * (tt - deg) - C * vel;
+    vel += acc * dt; deg += vel * dt;
+  }
+  render();
+  requestAnimationFrame(frame);
+}
+function render(){
+  var a = deg * Math.PI / 180;
+  beamG.setAttribute('transform', 'rotate(' + deg.toFixed(3) + ' ' + PX + ' ' + PY + ')');
+  lx = PX - B * Math.cos(a); ly = PY - B * Math.sin(a);
+  rx = PX + B * Math.cos(a); ry = PY + B * Math.sin(a);
+  panL.setAttribute('transform', 'translate(' + lx.toFixed(2) + ' ' + ly.toFixed(2) + ')');
+  panR.setAttribute('transform', 'translate(' + rx.toFixed(2) + ' ' + ry.toFixed(2) + ')');
+}
+requestAnimationFrame(frame);
+
+function panPx(side){
+  var r = svg.getBoundingClientRect(), s = r.width / 390;
+  var p = side === 'L' ? { x: lx, y: ly } : { x: rx, y: ry };
+  return { x: r.left + p.x * s, y: r.top + (p.y + 42) * s };
+}
+
+/* ---------- audio & haptic ---------- */
+var AC = null;
+function ac(){
+  if (!AC){
+    var Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    AC = new Ctor();
+  }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function thud(){
+  try{
+    var a = ac(); if (!a) return;
+    var t = a.currentTime;
+    var o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(130, t);
+    o.frequency.exponentialRampToValueAtTime(44, t + 0.13);
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.17);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + 0.2);
+    var len = Math.floor(a.sampleRate * 0.03);
+    var b = a.createBuffer(1, len, a.sampleRate), d = b.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var s2 = a.createBufferSource(); s2.buffer = b;
+    var f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1600;
+    var g2 = a.createGain(); g2.gain.value = 0.14;
+    s2.connect(f); f.connect(g2); g2.connect(a.destination);
+    s2.start(t);
+  } catch(e){}
+}
+function pshh(){
+  try{
+    var a = ac(); if (!a) return;
+    var t = a.currentTime;
+    var len = Math.floor(a.sampleRate * 0.7);
+    var b = a.createBuffer(1, len, a.sampleRate), d = b.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.6);
+    var s2 = a.createBufferSource(); s2.buffer = b;
+    var f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 4200; f.Q.value = 0.7;
+    var g = a.createGain();
+    g.gain.setValueAtTime(0.28, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+    s2.connect(f); f.connect(g); g.connect(a.destination);
+    s2.start(t);
+  } catch(e){}
+}
+function buzz(p){ try{ if (navigator.vibrate) navigator.vibrate(p); } catch(e){} }
+
+/* ---------- quips & floats ---------- */
+var quipEl = $('#quip'), quipTxt = $('#quipTxt');
+var QUIPS = [
+  'Здоровье кивнуло, диван обиделся.',
+  'Оплачено силой воли, сдачи не будет.',
+  'Три подвига за день. Ты почти святой, только злой и голодный.',
+  'Нимб уже светится, терпение уже мигает.',
+  'Пять из пяти. Идеальный человек — и абсолютно вымотанный.'
+];
+var AFTER_CAN = ['Гора растёт. Банка не в курсе.', 'Всё ещё перевешивает. Такая вот физика.'];
+function say(text, cls){
+  quipEl.className = 'quip' + (cls ? ' ' + cls : '');
+  quipTxt.classList.remove('on');
+  setTimeout(function(){
+    quipTxt.textContent = text;
+    quipTxt.classList.add('on');
+  }, reduced ? 0 : 180);
+}
+function floatCaption(text, side){
+  if (reduced) return;
+  var p = panPx(side || 'L'), sr = stage.getBoundingClientRect();
+  var el = document.createElement('div');
+  el.className = 'float';
+  el.textContent = text;
+  el.style.left = (p.x - sr.left) + 'px';
+  el.style.top = (p.y - sr.top - 96) + 'px';
+  stage.appendChild(el);
+  el.addEventListener('animationend', function(){ el.remove(); });
+}
+
+/* ---------- score ---------- */
+function sufSum(){ return placed.reduce(function(s, h){ return s + h.pain; }, 0); }
+function updScore(){
+  $('#sufN').textContent = sufSum();
+  $('#joyN').textContent = canPlaced ? 14 : 0;
+}
+
+/* ---------- pan rendering ---------- */
+var SLOTS = [[-20,0],[0,0],[20,0],[-10,-16],[10,-16]];
+var NS = 'http://www.w3.org/2000/svg';
+function addWeightToPan(h){
+  var i = Math.min(placed.length - 1, SLOTS.length - 1);
+  var g = document.createElementNS(NS, 'g');
+  g.setAttribute('transform', 'translate(' + SLOTS[i][0] + ' ' + (47 + SLOTS[i][1]) + ') scale(0.82)');
+  var u = document.createElementNS(NS, 'use');
+  u.setAttribute('href', '#gwSym');
+  u.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#gwSym');
+  var tx = document.createElementNS(NS, 'text');
+  tx.setAttribute('class', 'wnum'); tx.setAttribute('x', '0'); tx.setAttribute('y', '-4.5');
+  tx.textContent = h.pain;
+  g.appendChild(u); g.appendChild(tx);
+  wL.appendChild(g);
+}
+function addCanToPan(){
+  var g = document.createElementNS(NS, 'g');
+  g.setAttribute('transform', 'translate(0 47) scale(0.98)');
+  var u = document.createElementNS(NS, 'use');
+  u.setAttribute('href', '#canSym');
+  u.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#canSym');
+  g.appendChild(u);
+  wR.appendChild(g);
+}
+
+/* ---------- tray cards ---------- */
+var tray = $('#tray');
+function iconSvg(item){
+  if (item.dzen){
+    return '<svg viewBox="-16 -50 32 52" width="30" height="49" aria-hidden="true">' +
+      '<use href="#canSym" xlink:href="#canSym"></use></svg>';
+  }
+  return '<svg viewBox="-15 -28 30 30" width="36" height="36" aria-hidden="true">' +
+    '<use href="#gwSym" xlink:href="#gwSym"></use>' +
+    '<text class="wnum" x="0" y="-4.5">' + item.pain + '</text></svg>';
+}
+function makeCard(item){
+  var el = document.createElement('div');
+  el.className = 'cardW' + (item.dzen ? ' dzen' : '');
+  el.innerHTML = iconSvg(item) +
+    '<div class="ttl">' + item.t + '</div>' +
+    '<div class="badge">' + (item.dzen ? item.pain + ' кайфа' : item.pain) + '</div>';
+  el.addEventListener('pointerdown', function(e){ press(e, item, el); });
+  item.el = el;
+  tray.appendChild(el);
+}
+HABITS.forEach(makeCard);
+var DZEN = { id:'dzen', dzen:true, t:'Банка DZEN', c:'единственная гирька, которую приятно поднимать', pain:14 };
+makeCard(DZEN);
+
+/* ---------- drag / tap ---------- */
+var pressing = false;
+function makeGhost(item, x, y){
+  var g = document.createElement('div');
+  g.className = 'ghost';
+  g.innerHTML = item.dzen
+    ? '<svg viewBox="-16 -50 32 52" width="34" height="55"><use href="#canSym" xlink:href="#canSym"></use></svg>'
+    : '<svg viewBox="-15 -28 30 30" width="46" height="46"><use href="#gwSym" xlink:href="#gwSym"></use>' +
+      '<text class="wnum" x="0" y="-4.5">' + item.pain + '</text></svg>';
+  g.style.left = x + 'px'; g.style.top = y + 'px';
+  document.body.appendChild(g);
+  return g;
+}
+function press(e, item, card){
+  if (pressing || item.used || finaleShown) return;
+  pressing = true;
+  ac(); /* unlock audio on first gesture */
+  var sx = e.clientX, sy = e.clientY, drag = false, ghost = null;
+  var pid = e.pointerId;
+  try { card.setPointerCapture(pid); } catch(err){}
+  function onMove(ev){
+    if (ev.pointerId !== pid) return;
+    if (!drag && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 10){
+      drag = true;
+      card.classList.add('lifting');
+      ghost = makeGhost(item, ev.clientX, ev.clientY);
+    }
+    if (drag && ghost){
+      ghost.style.left = ev.clientX + 'px';
+      ghost.style.top = ev.clientY + 'px';
+    }
+  }
+  function onUp(ev){
+    if (ev.pointerId !== pid) return;
+    card.removeEventListener('pointermove', onMove);
+    card.removeEventListener('pointerup', onUp);
+    card.removeEventListener('pointercancel', onUp);
+    card.classList.remove('lifting');
+    pressing = false;
+    if (!drag){
+      /* tap → fly from card */
+      var r = card.getBoundingClientRect();
+      flyToPan(item, r.left + r.width / 2, r.top + 24);
+      return;
+    }
+    var trayTop = tray.getBoundingClientRect().top;
+    if (ghost){
+      if (ev.clientY < trayTop - 8){
+        var gr = ghost.getBoundingClientRect();
+        var gx = gr.left + gr.width / 2, gy = gr.top + gr.height / 2;
+        ghost.remove();
+        flyToPan(item, gx, gy);
+      } else {
+        var gh = ghost;
+        if (!reduced && gh.animate){
+          var anim = gh.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+          anim.onfinish = function(){ gh.remove(); };
+        } else gh.remove();
+      }
+    }
+  }
+  card.addEventListener('pointermove', onMove);
+  card.addEventListener('pointerup', onUp);
+  card.addEventListener('pointercancel', onUp);
+}
+function flyToPan(item, fromX, fromY){
+  item.used = true;
+  item.el.classList.add('used');
+  item.el.querySelector('.badge').textContent = 'на весах';
+  var target = panPx(item.dzen ? 'R' : 'L');
+  if (reduced || !document.body.animate){
+    land(item);
+    return;
+  }
+  var ghost = makeGhost(item, fromX, fromY);
+  var dx = target.x - fromX, dy = target.y - fromY;
+  var anim = ghost.animate(
+    [
+      { transform: 'translate(-50%,-55%) scale(1.05)' },
+      { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-55% + ' + dy + 'px)) scale(0.72)' }
+    ],
+    { duration: 480, easing: 'cubic-bezier(.45,.02,.72,.9)' }
+  );
+  anim.onfinish = function(){ ghost.remove(); land(item); };
+}
+function land(item){
+  if (item.dzen){ landCan(); return; }
+  placed.push(item);
+  if (canActive) extraAfter++;
+  addWeightToPan(item);
+  if (!reduced) vel -= canActive ? 12 : 48;
+  thud(); buzz(12);
+  updScore();
+  floatCaption(item.c, 'L');
+  if (canActive){
+    saveResult();
+    say(AFTER_CAN[Math.min(extraAfter - 1, AFTER_CAN.length - 1)]);
+  } else {
+    say(QUIPS[Math.min(placed.length - 1, QUIPS.length - 1)]);
+  }
+}
+function landCan(){
+  canPlaced = true;
+  addCanToPan();
+  thud(); buzz(12);
+  updScore();
+  floatCaption(DZEN.c, 'R');
+  say('Выдох. Наконец польза, за которую не пришлось страдать.');
+  var flip = function(){
+    canActive = true;
+    if (!reduced) vel += 74;
+    pshh(); buzz([12, 70, 12]);
+    document.body.classList.add('zen');
+    var mt = document.querySelector('meta[name="theme-color"]');
+    if (mt) mt.setAttribute('content', '#EFF2E4');
+  };
+  if (reduced) flip(); else setTimeout(flip, 520);
+  setTimeout(function(){ say('Польза, которую не надо терпеть.', 'final'); }, 2100);
+  setTimeout(showSnap, 2700);
+  saveResult();
+}
+
+/* ---------- storage of result ---------- */
+function saveResult(){
+  var total = sufSum();
+  st.lastDate = dayKey;
+  st.lastPain = total;
+  st.best = Math.max(st.best || 0, total);
+  saveST(st);
+}
+
+/* ---------- finale & share ---------- */
+function showSnap(){
+  $('#snapBtn').classList.add('on');
+}
+$('#snapBtn').addEventListener('click', openFinale);
+function openFinale(){
+  finaleShown = true;
+  var total = sufSum();
+  $('#bigS').textContent = total;
+  $('#bigJ').textContent = 14;
+  $('#verdict').textContent = total === 0
+    ? 'Ноль страданий, чистый кайф.'
+    : 'Банка победила.';
+  var rec = 'Рекорд гирь: ' + (st.best || total) + ' · Завтра гирьки будут весить по-другому — возвращайся за новым замером.';
+  $('#recLine').textContent = rec;
+  /* mini snapshot of the live scale */
+  var mini = $('#miniScale');
+  mini.innerHTML = '';
+  var c = svg.cloneNode(true);
+  c.removeAttribute('id');
+  mini.appendChild(c);
+  $('#overlay').classList.add('on');
+  buzz(12);
+}
+$('#closeBtn').addEventListener('click', function(){
+  $('#overlay').classList.remove('on');
+  finaleShown = false;
+});
+$('#againBtn').addEventListener('click', function(){ location.reload(); });
+
+function shareText(){
+  var total = sufSum();
+  if (total === 0) return 'Мои весы: 0 страданий и одна банка кайфа. dzen — ' + SHARE_URL;
+  return 'Мои весы: ' + total + ' страданий против одной банки. Банка победила. А у тебя что перевесит? ' + SHARE_URL;
+}
+$('#shareBtn').addEventListener('click', function(){
+  var txt = shareText();
+  var btn = $('#shareBtn');
+  if (navigator.share){
+    navigator.share({ text: txt }).catch(function(){});
+    return;
+  }
+  var done = function(){
+    btn.textContent = 'Скопировано — вставь в чат';
+    setTimeout(function(){ btn.textContent = 'Поделиться'; }, 2600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, function(){ legacyCopy(txt); done(); });
+  } else {
+    legacyCopy(txt); done();
+  }
+});
+function legacyCopy(txt){
+  try{
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+  } catch(e){}
+}
+})();
+</script>
+</body>
+</html>
