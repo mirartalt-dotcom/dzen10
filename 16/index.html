@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>DZEN — Калькулятор страданий</title>
+<style>
+:root{
+  --paper:#F4F1EA; --zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F; --line:#DFDACE; --card:#FBFAF6;
+  --lime:#A8C96B; --lime-d:#56732E; --lime-l:#ECF0DD;
+  --terra:#C0563E; --terra-d:#8A3A28; --terra-l:#F4E3DD;
+  --mango:#C2791B; --grape:#7A5C93;
+  --ease:cubic-bezier(.22,.61,.36,1); --spring:cubic-bezier(.34,1.42,.5,1);
+  --r:24px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+  min-height:100%;}
+body{display:flex;justify-content:center}
+#app{width:100%;max-width:560px;min-height:100dvh;padding:20px 20px 32px;display:flex;flex-direction:column;position:relative}
+
+/* ---------- экраны ---------- */
+.scr{display:none;flex-direction:column;flex:1;min-height:calc(100dvh - 52px)}
+.scr.on{display:flex;animation:scrIn .55s var(--ease) both}
+@keyframes scrIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.grow{flex:1}
+.center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+
+/* ---------- типографика ---------- */
+h1{font-size:clamp(30px,8vw,40px);line-height:1.12;letter-spacing:-.02em;font-weight:750}
+h2{font-size:clamp(23px,6.2vw,30px);line-height:1.15;letter-spacing:-.02em;font-weight:700}
+.sub{color:var(--muted);font-size:16px;line-height:1.5;margin-top:12px}
+.small{font-size:13px;color:var(--muted);line-height:1.45}
+.tiny{font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+.bignum{font-size:clamp(96px,32vw,150px);font-weight:800;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums}
+
+/* ---------- кнопки ---------- */
+.btn{display:block;width:100%;border:0;border-radius:22px;padding:17px 22px;font-size:17px;font-weight:650;
+  font-family:inherit;cursor:pointer;background:var(--ink);color:var(--paper);
+  transition:transform .35s var(--spring),opacity .2s;user-select:none;-webkit-user-select:none}
+.btn:active{transform:scale(.965)}
+.btn.lime{background:var(--lime-d);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.soft{background:var(--card);color:var(--ink);border:1.5px solid var(--line)}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stack{display:flex;flex-direction:column;gap:10px}
+
+/* ---------- карточки ---------- */
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:20px}
+.cas{opacity:0;transform:translateY(16px) scale(.97)}
+.cas.in{animation:casIn .6s var(--spring) both}
+@keyframes casIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+
+/* ---------- прогресс квиза ---------- */
+.dots{display:flex;gap:7px;justify-content:center}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--line);transition:all .4s var(--spring)}
+.dots i.done{background:var(--terra);}
+.dots i.cur{background:var(--ink);transform:scale(1.35)}
+
+/* ---------- квиз ---------- */
+.qcard{background:var(--card);border:1.5px solid var(--line);border-radius:28px;padding:30px 24px;text-align:center}
+.qtitle{font-size:24px;font-weight:700;letter-spacing:-.015em;line-height:1.2}
+.qsub{color:var(--muted);font-size:15px;margin-top:10px;line-height:1.45}
+.qbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:26px}
+.qb{border:1.5px solid var(--line);background:var(--paper);border-radius:20px;padding:16px;
+  font-size:17px;font-weight:650;font-family:inherit;cursor:pointer;color:var(--ink);
+  transition:transform .35s var(--spring),background .2s,border-color .2s}
+.qb:active{transform:scale(.95)}
+.qb.yes.picked{background:var(--terra-l);border-color:var(--terra)}
+.qb.no.picked{background:var(--lime-l);border-color:var(--lime-d)}
+.echo{min-height:44px;margin-top:16px;font-size:14.5px;color:var(--muted);line-height:1.4;
+  opacity:0;transition:opacity .3s}
+.echo.show{opacity:1}
+.teaser{margin-top:14px;display:inline-flex;align-items:center;gap:8px;background:var(--card);
+  border:1.5px solid var(--line);border-radius:999px;padding:8px 16px;font-size:13px;color:var(--muted);
+  opacity:0;transform:translateY(8px);transition:all .5s var(--spring)}
+.teaser.show{opacity:1;transform:none}
+.teaser b{filter:blur(5px);color:var(--ink)}
+
+/* ---------- банка DZEN ---------- */
+.canwrap{display:flex;justify-content:center}
+.can{width:120px;height:196px;border-radius:26px 26px 30px 30px;position:relative;
+  background:linear-gradient(160deg,#BFD98A 0%,var(--lime) 40%,#8FB051 100%);
+  box-shadow:0 24px 44px -18px rgba(86,115,46,.45), inset 0 2px 0 rgba(255,255,255,.5);
+  animation:canFloat 4.5s ease-in-out infinite}
+.can::before{content:"";position:absolute;top:-9px;left:9px;right:9px;height:16px;border-radius:50%;
+  background:linear-gradient(180deg,#E8E4D8,#C9C4B4)}
+.can::after{content:"";position:absolute;top:12px;bottom:12px;left:13px;width:14px;border-radius:10px;
+  background:linear-gradient(90deg,rgba(255,255,255,.55),rgba(255,255,255,0))}
+.can span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  writing-mode:vertical-rl;font-weight:800;font-size:34px;letter-spacing:.34em;color:#fff;
+  text-shadow:0 1px 2px rgba(60,80,30,.25)}
+@keyframes canFloat{0%,100%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-9px) rotate(1.2deg)}}
+.pop{animation:popIn .7s var(--spring) both}
+@keyframes popIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+
+/* ---------- персонаж ---------- */
+.creature{display:flex;justify-content:center}
+.creature svg{overflow:visible}
+.cre-body{animation:breathe 3.6s ease-in-out infinite;transform-origin:60px 78px}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.cre-eye{animation:blink 5s infinite}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.cre-bounce{animation:creBounce .8s var(--spring)}
+@keyframes creBounce{0%{transform:scale(1)}35%{transform:scale(1.14,.9)}70%{transform:scale(.95,1.07)}100%{transform:scale(1)}}
+
+/* ---------- карточка дня ---------- */
+.daycard{background:var(--card);border:1.5px solid var(--line);border-radius:28px;padding:24px 22px 18px;
+  text-align:center;position:relative;overflow:hidden}
+.daycard .glow{position:absolute;top:-70px;left:50%;transform:translateX(-50%);width:260px;height:170px;
+  background:radial-gradient(closest-side,var(--lime-l),transparent);pointer-events:none}
+.dc-idx{font-size:74px;font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.dc-row{display:flex;justify-content:center;gap:16px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 13px;font-size:13.5px;
+  font-weight:650;background:var(--paper);border:1.5px solid var(--line)}
+.chip.fire{background:var(--terra-l);border-color:transparent;color:var(--terra-d)}
+.chip.limec{background:var(--lime-l);border-color:transparent;color:var(--lime-d)}
+.chip.demo{background:var(--grape);color:#fff;border-color:transparent;font-size:11px;letter-spacing:.06em}
+.flame{display:inline-block;animation:flame 1.6s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes flame{0%,100%{transform:scale(1) rotate(-2deg)}50%{transform:scale(1.12) rotate(2deg)}}
+
+/* ---------- недельный календарь ---------- */
+.week{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.wd{width:32px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.wd i{width:11px;height:11px;border-radius:50%;background:var(--line);display:block}
+.wd.hit i{background:var(--lime-d)}
+.wd.frz i{background:#8FB6D9}
+.wd.today i{outline:2.5px solid var(--ink);outline-offset:2.5px}
+.wd em{font-style:normal;font-size:10px;color:var(--muted)}
+
+/* ---------- настроение ---------- */
+.faces{display:flex;gap:10px;justify-content:center}
+.face{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:10px;cursor:pointer;
+  transition:transform .35s var(--spring),background .2s,border-color .2s}
+.face:active{transform:scale(.9)}
+.face.picked{background:var(--lime-l);border-color:var(--lime-d);transform:scale(1.08)}
+
+/* ---------- привычки-чипы ---------- */
+.hchips{display:flex;flex-direction:column;gap:9px}
+.hc{display:flex;align-items:center;gap:12px;background:var(--card);border:1.5px solid var(--line);
+  border-radius:20px;padding:14px 16px;cursor:pointer;text-align:left;font-family:inherit;color:var(--ink);
+  transition:transform .3s var(--spring),background .2s,border-color .2s;width:100%}
+.hc:active{transform:scale(.975)}
+.hc .tick{width:24px;height:24px;border-radius:9px;border:1.5px solid var(--line);flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;transition:all .25s}
+.hc.picked{background:var(--terra-l);border-color:var(--terra)}
+.hc.picked .tick{background:var(--terra);border-color:var(--terra)}
+.hc.dz.picked{background:var(--lime-l);border-color:var(--lime-d)}
+.hc.dz.picked .tick{background:var(--lime-d);border-color:var(--lime-d)}
+.hc b{font-size:15.5px;font-weight:650;display:block}
+.hc small{font-size:12.5px;color:var(--muted);line-height:1.3;display:block;margin-top:2px}
+
+/* ---------- баннеры ---------- */
+.warn{background:var(--terra-l);border:1.5px solid rgba(192,86,62,.35);color:var(--terra-d);
+  border-radius:18px;padding:12px 16px;font-size:13.5px;font-weight:600;line-height:1.4;text-align:center}
+.duelbar{background:var(--ink);color:var(--paper);border-radius:18px;padding:12px 16px;
+  font-size:13.5px;font-weight:600;text-align:center;line-height:1.45}
+
+/* ---------- дельта ---------- */
+.delta{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:8px 16px;
+  font-size:15px;font-weight:700}
+.delta.down{background:var(--lime-l);color:var(--lime-d)}
+.delta.up{background:var(--terra-l);color:var(--terra-d)}
+.delta.flat{background:var(--card);border:1.5px solid var(--line);color:var(--muted)}
+
+/* ---------- шторки ---------- */
+#ovl{position:fixed;inset:0;background:rgba(43,42,38,.4);opacity:0;pointer-events:none;
+  transition:opacity .35s;z-index:40;backdrop-filter:blur(2px)}
+#ovl.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,105%);width:100%;max-width:560px;
+  background:var(--card);border-radius:28px 28px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom));
+  z-index:50;transition:transform .55s var(--spring);max-height:82dvh;overflow-y:auto}
+.sheet.on{transform:translate(-50%,0)}
+.grab{width:40px;height:4.5px;border-radius:3px;background:var(--line);margin:0 auto 18px}
+.soon{display:inline-block;background:var(--grape);color:#fff;font-size:10.5px;font-weight:700;
+  letter-spacing:.08em;border-radius:999px;padding:4px 10px;text-transform:uppercase}
+
+/* ---------- чат ---------- */
+.chatlog{display:flex;flex-direction:column;gap:9px;margin:16px 0;min-height:60px}
+.bub{max-width:85%;border-radius:18px;padding:11px 15px;font-size:14.5px;line-height:1.45;
+  animation:casIn .45s var(--spring) both}
+.bub.me{align-self:flex-end;background:var(--ink);color:var(--paper);border-bottom-right-radius:6px}
+.bub.dz{align-self:flex-start;background:var(--zen);border-bottom-left-radius:6px}
+.qchips{display:flex;flex-wrap:wrap;gap:8px}
+.qchip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:9px 14px;
+  font-size:13.5px;font-family:inherit;color:var(--ink);cursor:pointer;transition:transform .3s var(--spring)}
+.qchip:active{transform:scale(.94)}
+.qchip[disabled]{opacity:.35;pointer-events:none}
+
+/* ---------- прочее ---------- */
+.foot{margin-top:22px;text-align:center}
+.linkish{background:none;border:0;color:var(--muted);font-size:12.5px;font-family:inherit;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line);padding:6px}
+.brandtag{position:absolute;top:20px;right:22px;font-size:12px;font-weight:750;letter-spacing:.22em;color:var(--muted)}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+.toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,80px);background:var(--ink);color:var(--paper);
+  border-radius:999px;padding:11px 20px;font-size:14px;font-weight:600;z-index:60;transition:transform .5s var(--spring);
+  white-space:nowrap}
+.toast.on{transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="brandtag">DZEN</div>
+
+  <!-- ЭКРАН: хук -->
+  <section class="scr" id="scr-hook">
+    <div class="grow center">
+      <div id="duel-hook" style="display:none;width:100%;margin-bottom:22px" class="duelbar"></div>
+      <h1>Сейчас посчитаем, сколько ты страдаешь, чтобы быть здоровым.</h1>
+      <p class="sub">5 честных вопросов. 60 секунд.<br>Цифру увидишь в конце — она у всех разная.</p>
+    </div>
+    <button class="btn" id="b-start">Поехали</button>
+    <div class="foot"><button class="linkish" id="tm-hook">показать, как будет через неделю · демо</button></div>
+  </section>
+
+  <!-- ЭКРАН: квиз -->
+  <section class="scr" id="scr-quiz">
+    <div class="dots" id="qdots"></div>
+    <div class="grow center" style="width:100%">
+      <div class="qcard" id="qcard" style="width:100%">
+        <div class="qtitle" id="q-title"></div>
+        <div class="qsub" id="q-sub"></div>
+        <div class="qbtns">
+          <button class="qb yes" id="q-yes">Да</button>
+          <button class="qb no" id="q-no">Нет</button>
+        </div>
+        <div class="echo" id="q-echo"></div>
+      </div>
+      <div class="teaser" id="q-teaser">индекс уже считается… <b>4#</b></div>
+    </div>
+  </section>
+
+  <!-- ЭКРАН: считаем -->
+  <section class="scr" id="scr-calc">
+    <div class="grow center">
+      <h2 id="calc-line">Считаем…</h2>
+      <p class="sub" id="calc-sub">Складываем подвиги, вычитаем терпение.</p>
+    </div>
+  </section>
+
+  <!-- ЭКРАН: результат -->
+  <section class="scr" id="scr-result">
+    <div class="grow center" style="gap:14px">
+      <div class="cas"><div class="tiny" style="text-transform:uppercase;letter-spacing:.14em">твой индекс страданий</div>
+        <div class="bignum" id="res-num">0</div></div>
+      <div class="cas"><h2 id="res-verdict"></h2></div>
+      <div class="cas card" style="width:100%" id="res-cmp"></div>
+      <div class="cas card" style="width:100%;background:var(--zen);border-color:transparent" id="res-barnum"></div>
+      <div class="cas card" style="width:100%;display:none" id="res-duel"></div>
+    </div>
+    <button class="btn cas" id="b-flip">А теперь — переворот</button>
+  </section>
+
+  <!-- ЭКРАН: DZEN-переворот -->
+  <section class="scr" id="scr-flip">
+    <div class="grow center" style="gap:26px">
+      <div class="canwrap pop"><div class="can"><span>DZEN</span></div></div>
+      <div>
+        <h2>Выдох.</h2>
+        <h2 style="margin-top:6px">Польза, которую не надо терпеть.</h2>
+        <p class="sub">Пребиотик-лимонад без сахара. 3 вида пребиотика, ≈4 г клетчатки,
+        0 г сахара. Единственная строка в этом списке, где платят удовольствием.</p>
+      </div>
+    </div>
+    <button class="btn lime" id="b-birth">Дальше</button>
+  </section>
+
+  <!-- ЭКРАН: рождение персонажа -->
+  <section class="scr" id="scr-birth">
+    <div class="grow center" style="gap:22px">
+      <div class="creature pop" id="cre-birth"></div>
+      <div>
+        <h2>Это твой внутренний.</h2>
+        <p class="sub">Ему сегодня то же, что и тебе: тот же индекс, те же подвиги.
+        Возвращайся завтра — замер дня займёт 10 секунд,<br>и посмотрим, как вы оба.</p>
+      </div>
+    </div>
+    <button class="btn" id="b-tocard">К карточке дня</button>
+  </section>
+
+  <!-- ЭКРАН: замер — настроение -->
+  <section class="scr" id="scr-mood">
+    <div id="warn-mood" class="warn" style="display:none;margin-bottom:16px"></div>
+    <div id="duel-mood" class="duelbar" style="display:none;margin-bottom:16px"></div>
+    <div class="grow center" style="gap:24px">
+      <div>
+        <div class="tiny" id="mood-day" style="text-transform:uppercase;letter-spacing:.14em"></div>
+        <h2 style="margin-top:8px">Как ты сегодня?</h2>
+      </div>
+      <div class="faces" id="faces"></div>
+      <p class="small">один тап — и дальше</p>
+    </div>
+  </section>
+
+  <!-- ЭКРАН: замер — привычки -->
+  <section class="scr" id="scr-habits">
+    <div class="grow" style="display:flex;flex-direction:column;justify-content:center;gap:18px">
+      <h2>Что из этого сегодня было?</h2>
+      <div class="hchips" id="hchips"></div>
+    </div>
+    <button class="btn" id="b-done" style="margin-top:18px">Готово</button>
+  </section>
+
+  <!-- ЭКРАН: результат дня -->
+  <section class="scr" id="scr-dayres">
+    <div class="grow center" style="gap:13px">
+      <div class="cas"><div class="tiny" style="text-transform:uppercase;letter-spacing:.14em">индекс страданий сегодня</div>
+        <div class="bignum" id="day-num" style="font-size:clamp(80px,26vw,120px)">0</div>
+        <div style="margin-top:8px"><span class="delta flat" id="day-delta"></span></div></div>
+      <div class="cas center"><div class="creature" id="cre-day"></div>
+        <p class="small" id="cre-line" style="margin-top:8px"></p></div>
+      <div class="cas card" style="width:100%;text-align:center" id="streak-card"></div>
+      <div class="cas card" style="width:100%;display:none;background:var(--lime-l);border-color:transparent" id="mile-card"></div>
+      <div class="cas card" style="width:100%;display:none" id="find-card"></div>
+      <div class="cas card" style="width:100%;display:none" id="day-duel"></div>
+    </div>
+    <button class="btn cas" id="b-home">К карточке дня</button>
+  </section>
+
+  <!-- ЭКРАН: дом / карточка дня -->
+  <section class="scr" id="scr-home">
+    <div class="grow" style="display:flex;flex-direction:column;justify-content:center;gap:14px">
+      <div class="daycard" id="daycard">
+        <div class="glow"></div>
+        <div class="tiny" style="text-transform:uppercase;letter-spacing:.14em" id="dc-date"></div>
+        <div class="creature" id="cre-home" style="margin:10px 0 4px"></div>
+        <div class="dc-idx" id="dc-idx">0</div>
+        <div class="tiny" style="margin-top:2px">индекс страданий</div>
+        <div class="dc-row">
+          <span class="chip fire"><span class="flame">🔥</span><span id="dc-streak"></span></span>
+          <span class="chip" id="dc-mood" style="display:none"></span>
+          <span class="chip demo" id="dc-demo" style="display:none">демо</span>
+        </div>
+        <div class="week" id="dc-week"></div>
+        <div class="tiny" style="margin-top:16px;opacity:.75">DZEN · калькулятор страданий</div>
+      </div>
+      <p class="small" style="text-align:center" id="home-hint"></p>
+      <div class="btnrow">
+        <button class="btn" id="b-share">Поделиться</button>
+        <button class="btn soft" id="b-duel">Вызвать на дуэль</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn ghost" id="b-tg" style="font-size:14.5px">Напоминания в Telegram</button>
+        <button class="btn ghost" id="b-chat" style="font-size:14.5px">Спросить у DZEN</button>
+      </div>
+      <p class="small" style="text-align:center">новый замер — <span class="timer" id="mid-timer">—</span></p>
+    </div>
+    <div class="foot">
+      <button class="linkish" id="tm-home">показать, как будет через неделю · демо</button>
+      <button class="linkish" id="tm-reset" style="display:none">сбросить демо</button>
+    </div>
+  </section>
+
+  <!-- шторки -->
+  <div id="ovl"></div>
+  <div class="sheet" id="sheet-tg">
+    <div class="grab"></div>
+    <span class="soon">скоро</span>
+    <h2 style="margin-top:12px">Твой внутренний напишет тебе сам</h2>
+    <p class="sub">Вечером, если замера ещё нет. Примерно так:</p>
+    <div class="card" style="margin-top:14px;background:var(--zen);border-color:transparent">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--lime-l);display:flex;align-items:center;justify-content:center;flex:none" id="tg-ava"></div>
+        <div>
+          <b style="font-size:14px">Твой внутренний</b>
+          <p style="font-size:14.5px;line-height:1.45;margin-top:3px">Эй. Уже 21:30, а замера нет.
+          Серия нервничает, я тоже. Это 10 секунд — зайди.</p>
+        </div>
+      </div>
+    </div>
+    <p class="small" style="margin-top:14px">Напоминания в Telegram появятся в следующей версии.
+    Пока внутренний тренирует формулировки.</p>
+    <button class="btn soft" style="margin-top:16px" data-close>Понял, жду</button>
+  </div>
+
+  <div class="sheet" id="sheet-chat">
+    <div class="grab"></div>
+    <h2>Спросить у DZEN</h2>
+    <div class="chatlog" id="chatlog">
+      <div class="bub dz">Привет. Я пока отвечаю только на важное. Выбирай.</div>
+    </div>
+    <div class="qchips" id="qchips"></div>
+    <p class="small" style="margin-top:14px"><span class="soon">скоро</span>&nbsp; полный ИИ-чат — в следующей версии</p>
+    <button class="btn soft" style="margin-top:14px" data-close>Закрыть</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   DZEN · Калькулятор страданий · №16 «Сборная»
+   Чистая логика вынесена наверх и не трогает DOM —
+   файл можно прогнать в jsc без браузера.
+   ============================================================ */
+
+/* ---------- канон привычек ---------- */
+var HABITS = [
+  {id:'sleep',  t:'Лёг до 23:00',           s:'вместо второго сезона, который сам себя не досмотрит', pain:14, health:18,
+   yes:'Здоровье кивнуло. Сериал делает вид, что не обиделся.', no:'Второй сезон сам себя не досмотрит. Понимаем.',
+   find:'В дни, когда ты ложишься до 23:00, настроение заметно выше. Сериал этого не признает.'},
+  {id:'sweets', t:'Не взял сладкое к чаю',  s:'вместо печенья, которое так грустно на тебя смотрит', pain:17, health:12,
+   yes:'Печенье грустно смотрит тебе вслед.', no:'Печенье победило. Счёт 1:0.',
+   find:'В дни без сладкого настроение выше. Печенье просило это не публиковать.'},
+  {id:'gym',    t:'Пошёл в зал через лень', s:'вместо дивана, который считал тебя своим', pain:15, health:23,
+   yes:'Диван подал на развод.', no:'Диван считает тебя своим. Пока обоснованно.',
+   find:'После зала настроение стабильно лучше. Диван требует пересчёта.'},
+  {id:'phone',  t:'Не залип в телефоне',    s:'вместо ленты, в которую зашёл на минутку ещё час назад', pain:12, health:10,
+   yes:'Лента переживёт. Наверное.', no:'Зашёл на минутку ещё час назад. Бывает.',
+   find:'Меньше ленты — ровнее настроение. Лента комментировать отказалась.'},
+  {id:'wb',     t:'Не купил из вайлдбериза', s:'вместо корзины, где уже лежала твоя новая жизнь', pain:10, health:8,
+   yes:'Корзина сохранит твою новую жизнь до лучших времён.', no:'Курьер уже в пути. Новая жизнь тоже.',
+   find:'Дни без корзины — спокойнее. Совпадение, в которое корзина не верит.'}
+];
+var MAXPAIN = 68, DZEN_PLEASURE = 14;
+var DZEN_FIND = 'В дни с DZEN настроение выше. Совпадение? Возможно. Вкусное совпадение.';
+
+/* ---------- даты ---------- */
+function pad2(n){ return (n<10?'0':'')+n; }
+function keyOf(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function todayKey(){ return keyOf(new Date()); }
+function parseKey(k){ var p=k.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function addDaysKey(k,n){ var d=parseKey(k); d.setDate(d.getDate()+n); return keyOf(d); }
+function dayDiff(a,b){ // b - a в днях
+  return Math.round((parseKey(b) - parseKey(a)) / 86400000);
+}
+function isoWeekKey(k){
+  var d = parseKey(k);
+  var t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var dayNum = (t.getDay()+6)%7;
+  t.setDate(t.getDate() - dayNum + 3);
+  var firstThu = new Date(t.getFullYear(),0,4);
+  var fDayNum = (firstThu.getDay()+6)%7;
+  firstThu.setDate(firstThu.getDate() - fDayNum + 3);
+  var week = 1 + Math.round((t - firstThu)/604800000);
+  return t.getFullYear()+'-W'+pad2(week);
+}
+var MONTHS=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+var WD=['пн','вт','ср','чт','пт','сб','вс'];
+function humanDate(k){ var d=parseKey(k); return d.getDate()+' '+MONTHS[d.getMonth()]; }
+
+/* ---------- индекс ---------- */
+function calcIndex(ids, dzen){
+  var raw = 0;
+  for (var i=0;i<HABITS.length;i++) if (ids.indexOf(HABITS[i].id)>=0) raw += HABITS[i].pain;
+  if (dzen) raw -= DZEN_PLEASURE;
+  var idx = Math.round(raw / MAXPAIN * 100);
+  return Math.max(0, Math.min(100, idx));
+}
+function percentile(idx){
+  var p = Math.round(100 / (1 + Math.exp(-(idx-38)/14)));
+  return Math.max(3, Math.min(97, p));
+}
+function comboRarity(ids){
+  var mask=0;
+  for (var i=0;i<HABITS.length;i++) if (ids.indexOf(HABITS[i].id)>=0) mask |= (1<<i);
+  return 2 + (mask*7)%6; // 2..7, детерминированно
+}
+function verdict(n){
+  return ['Пока ты просто живёшь. Ни пользы, ни боли.',
+    'Один подвиг. Скромно и со вкусом.',
+    'Два подвига. Держишься — но чего это стоит.',
+    'Три подвига за день. Ты почти святой, только злой и голодный.',
+    'Четыре из пяти. Нимб уже светится, терпение уже мигает.',
+    'Пять из пяти. Идеальный человек — и абсолютно вымотанный.'][n] || '';
+}
+function barnum(ids){
+  if (ids.indexOf('sweets')<0) return 'Ты берёшь сладкое не от голода, а когда дедлайн. Ты и сам это знаешь.';
+  if (ids.indexOf('phone')<0)  return 'Ты листаешь ленту не от скуки, а чтобы не думать о списке дел. Работает так себе.';
+  if (ids.indexOf('gym')>=0)   return 'Ты не ищешь мотивацию — ты просто делаешь через «не хочу». Дорогой способ.';
+  return 'Ты не ленишься. Ты копишь силы на всё сразу — и это тоже утомляет.';
+}
+function stageFor(nDays){
+  if (nDays>=14) return 4;
+  if (nDays>=7) return 3;
+  if (nDays>=3) return 2;
+  return 1;
+}
+
+/* ---------- стрик ---------- */
+function updateStreak(st, tk){
+  // возвращает 'first' | 'inc' | 'freeze' | 'burn' | 'same'; мутирует st
+  if (st.last === tk) return 'same';
+  var res;
+  if (!st.last){ st.streak = 1; res = 'first'; }
+  else {
+    var diff = dayDiff(st.last, tk);
+    if (diff === 1){ st.streak += 1; res = 'inc'; }
+    else if (diff === 2 && st.lastFreezeWeek !== isoWeekKey(tk)){
+      st.streak += 1; st.lastFreezeWeek = isoWeekKey(tk);
+      st.frozen[addDaysKey(tk,-1)] = true; res = 'freeze';
+    } else { st.streak = 1; res = 'burn'; }
+  }
+  st.last = tk;
+  if (st.streak > (st.best||0)) st.best = st.streak;
+  return res;
+}
+
+/* ---------- находки ---------- */
+function avg(a){ var s=0; for(var i=0;i<a.length;i++) s+=a[i]; return s/a.length; }
+function bestFinding(days){
+  var keys = Object.keys(days), entries=[];
+  for (var i=0;i<keys.length;i++){ var e=days[keys[i]]; if (e && e.mood) entries.push(e); }
+  if (entries.length < 3) return null;
+  var best = null;
+  function consider(on, off, text){
+    if (on.length>=2 && off.length>=1){
+      var d = avg(on)-avg(off);
+      if (d>=0.5 && (!best || d>best.d)) best={d:d, text:text};
+    }
+  }
+  for (var h=0;h<HABITS.length;h++){
+    var id=HABITS[h].id, on=[], off=[];
+    for (var j=0;j<entries.length;j++)
+      (entries[j].habits.indexOf(id)>=0 ? on : off).push(entries[j].mood);
+    consider(on, off, HABITS[h].find);
+  }
+  var don=[], doff=[];
+  for (var k=0;k<entries.length;k++) (entries[k].dzen ? don : doff).push(entries[k].mood);
+  consider(don, doff, DZEN_FIND);
+  return best ? best.text : null;
+}
+
+/* ---------- демо-история (машина времени) ---------- */
+function buildDemoState(tk){
+  var moods=[3,2,4,3,4,5,4];
+  var sets=[['sleep','gym'],['sweets'],['sleep','sweets','gym'],['phone'],
+            ['sleep','gym','wb'],['sleep','sweets','gym','phone'],['sleep','gym']];
+  var dz=[false,false,true,false,true,true,true];
+  var st={ days:{}, last:null, streak:0, best:0, frozen:{}, lastFreezeWeek:null, born:addDaysKey(tk,-6), demo:true };
+  for (var i=0;i<7;i++){
+    var k=addDaysKey(tk, i-6);
+    st.days[k]={ mood:moods[i], habits:sets[i], dzen:dz[i], index:calcIndex(sets[i],dz[i]) };
+    updateStreak(st,k);
+  }
+  return st;
+}
+
+/* ============================================================
+   DOM-часть — только в браузере
+   ============================================================ */
+if (typeof document !== 'undefined'){ (function(){
+
+var LS='dzen16', LSBAK='dzen16.bak';
+function load(){ try{ var raw=localStorage.getItem(LS); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+function save(st){ try{ localStorage.setItem(LS, JSON.stringify(st)); }catch(e){} }
+
+var state = load();
+var TK = todayKey();
+var duelIdx = null;
+(function(){ var m=(location.hash||'').match(/#d=(\d{1,3})/); if(m) duelIdx=Math.min(100,+m[1]); })();
+
+var $=function(id){ return document.getElementById(id); };
+function hap(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||12); }catch(e){} }
+
+/* ---------- звук (WebAudio, без файлов) ---------- */
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function tick(){
+  var c=ac(); if(!c) return;
+  var o=c.createOscillator(), g=c.createGain();
+  o.type='sine'; o.frequency.value=880;
+  g.gain.setValueAtTime(.06,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.09);
+  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+.1);
+}
+function pshh(){
+  var c=ac(); if(!c) return;
+  var len=c.sampleRate*0.5, buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0);
+  for(var i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.6);
+  var src=c.createBufferSource(); src.buffer=buf;
+  var f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=2400;
+  var g=c.createGain(); g.gain.value=.18;
+  src.connect(f); f.connect(g); g.connect(c.destination); src.start();
+}
+
+/* ---------- экраны и каскады ---------- */
+var CUR=null;
+function show(id){
+  var s=document.querySelectorAll('.scr');
+  for(var i=0;i<s.length;i++) s[i].classList.remove('on');
+  $(id).classList.add('on'); CUR=id;
+  window.scrollTo(0,0);
+}
+function cascade(scr){
+  var items=$(scr).querySelectorAll('.cas');
+  for(var i=0;i<items.length;i++){
+    items[i].classList.remove('in');
+    if (items[i].style.display==='none') continue;
+    items[i].style.animationDelay=(0.15+i*0.5)+'s';
+    items[i].classList.add('in');
+  }
+}
+function countUp(el, to, dur){
+  var t0=null;
+  function f(t){
+    if(!t0) t0=t;
+    var p=Math.min(1,(t-t0)/dur);
+    var e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(to*e);
+    if(p<1) requestAnimationFrame(f); else el.textContent=to;
+  }
+  requestAnimationFrame(f);
+}
+function toast(msg){
+  var t=$('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._h); t._h=setTimeout(function(){ t.classList.remove('on'); },2200);
+}
+
+/* ---------- лица и персонаж (SVG) ---------- */
+var MOUTHS={1:'M11 23 Q16 17 21 23',2:'M11 22 Q16 19 21 22',3:'M11 21 L21 21',
+            4:'M11 20 Q16 24 21 20',5:'M10 19 Q16 26 22 19'};
+function faceSVG(mood,size){
+  size=size||46;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 32 32">'+
+    '<circle cx="16" cy="16" r="14" fill="var(--lime-l)" stroke="var(--lime-d)" stroke-width="1.6"/>'+
+    '<circle cx="11.5" cy="13" r="1.7" fill="var(--ink)"/><circle cx="20.5" cy="13" r="1.7" fill="var(--ink)"/>'+
+    '<path d="'+MOUTHS[mood]+'" stroke="var(--ink)" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg>';
+}
+function creatureSVG(stage, mood, size){
+  size=size||150; mood=mood||4;
+  var sc=[0,.82,.92,1,1.06][stage]||1;
+  var leaf1 = stage>=2 ? '<path d="M60 26 Q52 12 40 12 Q46 26 58 28 Z" fill="var(--lime-d)" opacity=".9"/>' : '';
+  var leaf2 = stage>=3 ? '<path d="M62 26 Q70 10 82 12 Q76 26 64 28 Z" fill="var(--lime)"/>' : '';
+  var aura  = stage>=4 ? '<circle cx="60" cy="72" r="52" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-dasharray="3 7" opacity=".7"/>' : '';
+  var mouths={1:'M50 90 Q60 82 70 90',2:'M50 89 Q60 85 70 89',3:'M50 88 L70 88',
+              4:'M50 86 Q60 93 70 86',5:'M48 84 Q60 96 72 84'};
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 120 130">'+aura+
+    '<g class="cre-body" style="transform:scale('+sc+')">'+
+    leaf1+leaf2+
+    '<path d="M60 24 C88 24 100 46 100 76 C100 102 84 116 60 116 C36 116 20 102 20 76 C20 46 32 24 60 24 Z" '+
+      'fill="var(--lime)" stroke="var(--lime-d)" stroke-width="2"/>'+
+    '<ellipse cx="60" cy="108" rx="26" ry="5" fill="var(--lime-d)" opacity=".14"/>'+
+    '<g class="cre-eye" style="transform-origin:47px 68px"><circle cx="47" cy="68" r="4.2" fill="var(--ink)"/></g>'+
+    '<g class="cre-eye" style="transform-origin:73px 68px"><circle cx="73" cy="68" r="4.2" fill="var(--ink)"/></g>'+
+    '<path d="'+mouths[mood]+'" stroke="var(--ink)" stroke-width="3" fill="none" stroke-linecap="round"/>'+
+    '<circle cx="40" cy="80" r="4.5" fill="var(--terra)" opacity=".18"/>'+
+    '<circle cx="80" cy="80" r="4.5" fill="var(--terra)" opacity=".18"/>'+
+    '</g></svg>';
+}
+function creatureStage(){ return state ? stageFor(Object.keys(state.days).length) : 1; }
+function creatureMood(){
+  if (state && state.days[TK] && state.days[TK].mood) return state.days[TK].mood;
+  return 4;
+}
+
+/* ============================================================
+   ПЕРВЫЙ ВИЗИТ: квиз
+   ============================================================ */
+var qi=0, answers={};
+function renderDots(){
+  var h='';
+  for(var i=0;i<HABITS.length;i++)
+    h+='<i class="'+(i<qi?'done':(i===qi?'cur':''))+'"></i>';
+  $('qdots').innerHTML=h;
+}
+function renderQ(){
+  renderDots();
+  var h=HABITS[qi];
+  $('q-title').textContent=h.t+'?';
+  $('q-sub').textContent='— '+h.s;
+  $('q-yes').classList.remove('picked'); $('q-no').classList.remove('picked');
+  $('q-echo').classList.remove('show'); $('q-echo').textContent='';
+  $('qcard').style.animation='none'; void $('qcard').offsetWidth;
+  $('qcard').style.animation='casIn .5s var(--spring) both';
+}
+function answer(yes){
+  var h=HABITS[qi];
+  answers[h.id]=yes;
+  hap(); tick();
+  $(yes?'q-yes':'q-no').classList.add('picked');
+  var echo=$('q-echo');
+  echo.textContent = yes ? h.yes : h.no;
+  echo.classList.add('show');
+  if (qi===2) setTimeout(function(){ $('q-teaser').classList.add('show'); }, 700);
+  setTimeout(function(){
+    qi++;
+    if (qi < HABITS.length) renderQ();
+    else finishQuiz();
+  }, 1150);
+}
+function finishQuiz(){
+  var ids=[];
+  for (var i=0;i<HABITS.length;i++) if (answers[HABITS[i].id]) ids.push(HABITS[i].id);
+  var idx=calcIndex(ids,false);
+  show('scr-calc');
+  setTimeout(function(){ $('calc-line').textContent='Почти…'; }, 800);
+  setTimeout(function(){ showResult(ids, idx); }, 1600);
+}
+function showResult(ids, idx){
+  // сохранить день 1
+  state = state || { days:{}, last:null, streak:0, best:0, frozen:{}, lastFreezeWeek:null, born:TK };
+  state.days[TK] = { mood:null, habits:ids, dzen:false, index:idx };
+  updateStreak(state, TK);
+  save(state);
+
+  show('scr-result');
+  var p=percentile(idx), r=comboRarity(ids);
+  $('res-verdict').textContent = verdict(ids.length);
+  $('res-cmp').innerHTML = '<b style="font-size:17px">Ты страдаешь сильнее, чем '+p+'% прошедших.</b>'+
+    '<p class="small" style="margin-top:6px">Такой набор подвигов — как у '+(100-p)+'% людей, '+
+    'но твоё сочетание встречается у '+r+'%.</p>';
+  $('res-barnum').innerHTML = '<p style="font-size:15px;line-height:1.5">'+barnum(ids)+'</p>';
+  if (duelIdx!==null){
+    var win = idx < duelIdx;
+    $('res-duel').style.display='block';
+    $('res-duel').innerHTML = '<b style="font-size:16px">Дуэль</b>'+
+      '<p style="font-size:15px;margin-top:6px">Ты: <b>'+idx+'</b> · соперник: <b>'+duelIdx+'</b></p>'+
+      '<p class="small" style="margin-top:4px">'+(win
+        ? 'Ты страдаешь спокойнее. Соперник платит терпением дороже.'
+        : (idx===duelIdx ? 'Ничья. Страдаете синхронно — это почти дружба.'
+                         : 'Соперник страдает спокойнее. Реванш — завтра, замеры никто не отменял.'))+'</p>';
+  }
+  cascade('scr-result');
+  setTimeout(function(){ hap(24); countUp($('res-num'), idx, 1400); }, 350);
+}
+
+/* ============================================================
+   ЕЖЕДНЕВНАЯ ПЕТЛЯ (день 2+)
+   ============================================================ */
+var todayMood=0, todaySet={}, todayDzen=false;
+
+function openMood(){
+  var n=Object.keys(state.days).length+1;
+  $('mood-day').textContent='день '+n+' · серия '+state.streak;
+  var f=$('faces'); f.innerHTML='';
+  for (var m=1;m<=5;m++){
+    (function(m){
+      var b=document.createElement('button');
+      b.className='face'; b.innerHTML=faceSVG(m,46);
+      b.setAttribute('aria-label','настроение '+m+' из 5');
+      b.onclick=function(){
+        hap(); tick(); todayMood=m;
+        var all=f.querySelectorAll('.face');
+        for(var i=0;i<all.length;i++) all[i].classList.remove('picked');
+        b.classList.add('picked');
+        setTimeout(openHabits, 420);
+      };
+      f.appendChild(b);
+    })(m);
+  }
+  burnWarn();
+  if (duelIdx!==null){
+    $('duel-mood').style.display='block';
+    $('duel-mood').textContent='⚔️ Тебя вызвали на дуэль. Индекс соперника откроется после твоего замера.';
+  }
+  show('scr-mood');
+}
+function burnWarn(){
+  var h=new Date().getHours();
+  if (h>=19 && !state.days[TK]){
+    var left=msToMidnight(), hh=Math.floor(left/3600000), mm=Math.floor(left%3600000/60000);
+    $('warn-mood').style.display='block';
+    $('warn-mood').textContent='🔥 Серия из '+state.streak+' '+plural(state.streak,'дня','дней','дней')+
+      ' сгорит через '+hh+' ч '+mm+' мин. Замер — 10 секунд.';
+  } else $('warn-mood').style.display='none';
+}
+function openHabits(){
+  todaySet={}; todayDzen=false;
+  var wrap=$('hchips'); wrap.innerHTML='';
+  for (var i=0;i<HABITS.length;i++){
+    (function(h){
+      var b=document.createElement('button');
+      b.className='hc';
+      b.innerHTML='<span class="tick">✓</span><span><b>'+h.t+'</b><small>'+h.s+'</small></span>';
+      b.onclick=function(){ hap(); todaySet[h.id]=!todaySet[h.id]; b.classList.toggle('picked'); };
+      wrap.appendChild(b);
+    })(HABITS[i]);
+  }
+  var dz=document.createElement('button');
+  dz.className='hc dz';
+  dz.innerHTML='<span class="tick">✓</span><span><b>Выпил DZEN</b><small>единственная кнопка, где платят удовольствием</small></span>';
+  dz.onclick=function(){ hap(); todayDzen=!todayDzen; dz.classList.toggle('picked'); };
+  wrap.appendChild(dz);
+  show('scr-habits');
+}
+function finishDay(){
+  var ids=[];
+  for (var i=0;i<HABITS.length;i++) if (todaySet[HABITS[i].id]) ids.push(HABITS[i].id);
+  var idx=calcIndex(ids, todayDzen);
+  var prevIdx=lastIndexBefore(TK);
+  var res=updateStreak(state, TK);
+  state.days[TK]={ mood:todayMood, habits:ids, dzen:todayDzen, index:idx };
+  save(state);
+  showDayResult(idx, prevIdx, res);
+}
+function lastIndexBefore(tk){
+  var ks=Object.keys(state.days).sort(), best=null;
+  for (var i=0;i<ks.length;i++) if (ks[i]<tk) best=ks[i];
+  return best!==null ? state.days[best].index : null;
+}
+function plural(n,a,b,c){
+  var m=n%10, h=n%100;
+  if (h>=11&&h<=14) return c;
+  if (m===1) return a;
+  if (m>=2&&m<=4) return b;
+  return c;
+}
+function showDayResult(idx, prevIdx, res){
+  show('scr-dayres');
+  // дельта
+  var d=$('day-delta');
+  if (prevIdx===null){ d.className='delta flat'; d.textContent='первый замер — точка отсчёта'; }
+  else {
+    var diff=idx-prevIdx;
+    if (diff<0){ d.className='delta down'; d.textContent='на '+(-diff)+' меньше страданий, чем вчера'; }
+    else if (diff>0){ d.className='delta up'; d.textContent='+'+diff+' страданий к вчера. Оплачено силой воли.'; }
+    else { d.className='delta flat'; d.textContent='ровно как вчера. Стабильность.'; }
+  }
+  // персонаж
+  var stage=creatureStage();
+  $('cre-day').innerHTML=creatureSVG(stage, todayMood||4, 130);
+  var cl;
+  if ((todayMood||4)>=4) cl='Внутренний сияет. Ему нравится, как вы живёте.';
+  else if (todayMood===3) cl='Внутренний ровно дышит. Нормальный день — тоже день.';
+  else cl='Внутренний рядом. Молча. Так тоже можно.';
+  $('cre-line').textContent=cl;
+  setTimeout(function(){ var s=$('cre-day').querySelector('svg'); if(s) s.classList.add('cre-bounce'); }, 900);
+  // стрик
+  var sc=$('streak-card');
+  var head, sub='';
+  if (res==='freeze'){ head='❄️ Заморозка спасла серию'; sub='Ты пропустил день, но недельная заморозка сгорела вместо серии. Серия: '+state.streak+'.'; }
+  else if (res==='burn'){ head='Серия сгорела'; sub='Новая начинается сегодня — и у неё уже есть огонёк.'; }
+  else head='<span class="flame">🔥</span> Серия: '+state.streak+' '+plural(state.streak,'день','дня','дней');
+  sc.innerHTML='<b style="font-size:18px">'+head+'</b>'+(sub?'<p class="small" style="margin-top:6px">'+sub+'</p>':'')+
+    '<div class="week">'+weekHTML()+'</div>';
+  // веха
+  var n=Object.keys(state.days).length, mc=$('mile-card');
+  if (n===3||n===7||n===14){
+    mc.style.display='block';
+    var mt={3:'Твой внутренний подрос. У него появился первый лист — это ты его вырастил.',
+            7:'Неделя. Внутренний вырос ещё — такое отмечают. DZEN манго-маракуйя, например.',
+            14:'Две недели. У внутреннего появилось сияние. У тебя, кстати, тоже.'}[n];
+    mc.innerHTML='<b style="font-size:16px">День '+n+'</b><p style="font-size:14.5px;margin-top:5px;line-height:1.45">'+mt+'</p>';
+  } else mc.style.display='none';
+  // находка
+  var fc=$('find-card'), f=(n>=3)?bestFinding(state.days):null;
+  if (n>=3){
+    fc.style.display='block';
+    fc.innerHTML='<b style="font-size:14px;color:var(--lime-d);letter-spacing:.06em;text-transform:uppercase">находка</b>'+
+      '<p style="font-size:14.5px;margin-top:6px;line-height:1.5">'+
+      (f||'Закономерности зреют. Ещё пара замеров — и внутренний начнёт делать выводы.')+'</p>';
+  } else fc.style.display='none';
+  // дуэль
+  var dd=$('day-duel');
+  if (duelIdx!==null){
+    dd.style.display='block';
+    var win=idx<duelIdx;
+    dd.innerHTML='<b style="font-size:16px">⚔️ Дуэль</b>'+
+      '<p style="font-size:15px;margin-top:6px">Ты: <b>'+idx+'</b> · соперник: <b>'+duelIdx+'</b> — '+
+      (win?'ты спокойнее.':(idx===duelIdx?'ничья.':'соперник спокойнее. Пока.'))+'</p>';
+  } else dd.style.display='none';
+  cascade('scr-dayres');
+  setTimeout(function(){ hap(24); countUp($('day-num'), idx, 1100); }, 300);
+}
+function weekHTML(){
+  var h='';
+  for (var i=6;i>=0;i--){
+    var k=addDaysKey(TK,-i), d=parseKey(k);
+    var cls='wd';
+    if (state.days[k]) cls+=' hit';
+    else if (state.frozen[k]) cls+=' frz';
+    if (k===TK) cls+=' today';
+    h+='<div class="'+cls+'"><i></i><em>'+WD[(d.getDay()+6)%7]+'</em></div>';
+  }
+  return h;
+}
+
+/* ============================================================
+   ДОМ: карточка дня
+   ============================================================ */
+var midTimer=null;
+function msToMidnight(){
+  var n=new Date(), m=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1);
+  return m-n;
+}
+function openHome(){
+  var e=state.days[TK];
+  $('dc-date').textContent=humanDate(TK)+' · день '+Object.keys(state.days).length;
+  $('cre-home').innerHTML=creatureSVG(creatureStage(), creatureMood(), 118);
+  $('dc-idx').textContent=e?e.index:'—';
+  $('dc-streak').textContent=state.streak+' '+plural(state.streak,'день','дня','дней');
+  if (e && e.mood){ $('dc-mood').style.display='inline-flex'; $('dc-mood').innerHTML=faceSVG(e.mood,20)+' настроение'; }
+  else $('dc-mood').style.display='none';
+  $('dc-demo').style.display = state.demo ? 'inline-flex':'none';
+  $('tm-reset').style.display = state.demo ? 'inline-block':'none';
+  $('tm-home').style.display = state.demo ? 'none':'inline-block';
+  $('dc-week').innerHTML=weekHTML();
+  $('home-hint').textContent = hintTomorrow();
+  show('scr-home');
+  clearInterval(midTimer);
+  function tickT(){
+    var ms=msToMidnight();
+    var h=Math.floor(ms/3600000), m=Math.floor(ms%3600000/60000), s=Math.floor(ms%60000/1000);
+    var el=$('mid-timer'); if (el) el.textContent='через '+pad2(h)+':'+pad2(m)+':'+pad2(s);
+  }
+  tickT(); midTimer=setInterval(tickT,1000);
+}
+function hintTomorrow(){
+  var n=Object.keys(state.days).length;
+  if (n===1) return 'Скриншот уходит в чат сам. А завтра тут появится дельта — стало легче или дороже.';
+  if (n<3)  return 'Завтра — замер в два тапа и первая находка на подходе.';
+  if (n<7)  return 'День '+(7)+' — внутренний вырастет. Не пропусти.';
+  return 'Каждый день — новая точка в истории. Её уже жалко бросать, да?';
+}
+
+/* ============================================================
+   ШЕРИНГ И ДУЭЛЬ
+   ============================================================ */
+function shareText(){
+  var e=state.days[TK];
+  var idx=e?e.index:0;
+  return 'Мой индекс страданий сегодня — '+idx+', серия '+state.streak+' 🔥 Спорим, у тебя хуже?';
+}
+function baseURL(){ return location.href.split('#')[0]; }
+function doShare(){
+  hap();
+  var txt=shareText()+' '+baseURL();
+  if (navigator.share){ navigator.share({text:txt}).catch(function(){}); }
+  else copy(txt,'Текст скопирован — вставь в чат');
+}
+function doDuel(){
+  hap();
+  var e=state.days[TK], idx=e?e.index:0;
+  var link=baseURL()+'#d='+idx;
+  var txt='⚔️ Вызываю на дуэль страданий. Мой индекс скрыт — пройди и узнаешь: '+link;
+  if (navigator.share){ navigator.share({text:txt}).catch(function(){}); }
+  else copy(txt,'Вызов скопирован — отправь другу');
+}
+function copy(txt,msg){
+  try{
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(txt).then(function(){toast(msg);},function(){fallbackCopy(txt,msg);});
+    else fallbackCopy(txt,msg);
+  }catch(e){ fallbackCopy(txt,msg); }
+}
+function fallbackCopy(txt,msg){
+  var ta=document.createElement('textarea');
+  ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); toast(msg); }catch(e){ toast('Не вышло — выдели и скопируй вручную'); }
+  document.body.removeChild(ta);
+}
+
+/* ============================================================
+   ШТОРКИ: Telegram и чат
+   ============================================================ */
+function openSheet(id){
+  hap();
+  $('ovl').classList.add('on'); $(id).classList.add('on');
+}
+function closeSheets(){
+  $('ovl').classList.remove('on');
+  var s=document.querySelectorAll('.sheet');
+  for(var i=0;i<s.length;i++) s[i].classList.remove('on');
+}
+var CHAT_QA=[
+  {q:'Что такое пребиотик?', a:'Еда для твоих бактерий. В банке — 3 вида пребиотика и около 4 г клетчатки. Бактерии довольны, ты газирован.'},
+  {q:'А сахар точно ноль?', a:'0 г сахара, примерно 20 ккал на 100 г, без Е-шек. Сладость есть, расплаты нет.'},
+  {q:'Почему привычки — это страдание?', a:'Потому что полезное обычно оплачивается терпением. Мы просто честно ведём этот счёт. DZEN — единственная строка, где платят удовольствием.'},
+  {q:'Как не терять серию?', a:'Заходи раз в день — замер занимает 10 секунд. Пропустил день? Раз в неделю заморозка прощает один пропуск. Автоматически.'},
+  {q:'Где купить DZEN?', a:'В Додо Пицце. Манго-маракуйя или лайм-мята — выбери сторону.'},
+  {q:'Мой внутренний — это кто?', a:'Это ты, только честнее. Он растёт на 3-й, 7-й и 14-й день замеров. Отдельно от тебя расти отказывается.'}
+];
+function initChat(){
+  var wrap=$('qchips');
+  for (var i=0;i<CHAT_QA.length;i++){
+    (function(qa){
+      var b=document.createElement('button');
+      b.className='qchip'; b.textContent=qa.q;
+      b.onclick=function(){
+        hap(); b.disabled=true;
+        var log=$('chatlog');
+        var me=document.createElement('div'); me.className='bub me'; me.textContent=qa.q; log.appendChild(me);
+        var t=document.createElement('div'); t.className='bub dz'; t.textContent='…'; log.appendChild(t);
+        log.scrollTop=log.scrollHeight;
+        setTimeout(function(){ t.textContent=qa.a; t.scrollIntoView({block:'nearest'}); }, 650);
+      };
+      wrap.appendChild(b);
+    })(CHAT_QA[i]);
+  }
+}
+
+/* ============================================================
+   МАШИНА ВРЕМЕНИ (демо)
+   ============================================================ */
+function timeMachine(){
+  hap();
+  try{
+    if (state && !state.demo) localStorage.setItem(LSBAK, JSON.stringify(state));
+  }catch(e){}
+  state=buildDemoState(TK);
+  save(state);
+  toast('Демо: неделя истории подставлена');
+  openHome();
+}
+function resetDemo(){
+  hap();
+  var bak=null;
+  try{ var raw=localStorage.getItem(LSBAK); bak=raw?JSON.parse(raw):null; localStorage.removeItem(LSBAK); }catch(e){}
+  try{ localStorage.removeItem(LS); }catch(e){}
+  state=bak;
+  if (state){ save(state); route(); }
+  else { location.hash=''; location.reload(); }
+}
+
+/* ============================================================
+   МАРШРУТИЗАЦИЯ
+   ============================================================ */
+function route(){
+  if (!state || !Object.keys(state.days||{}).length){
+    if (duelIdx!==null){
+      $('duel-hook').style.display='block';
+      $('duel-hook').textContent='⚔️ Тебя вызвали на дуэль страданий. Индекс соперника скрыт — откроется после твоего результата.';
+    }
+    show('scr-hook');
+    return;
+  }
+  // серия могла сгореть, пока человека не было — покажем честно при замере
+  if (state.days[TK]) openHome();
+  else openMood();
+}
+
+/* ---------- события ---------- */
+$('b-start').onclick=function(){ hap(); qi=0; answers={}; renderQ(); show('scr-quiz'); };
+$('q-yes').onclick=function(){ if(!$('q-yes').classList.contains('picked')&&!$('q-no').classList.contains('picked')) answer(true); };
+$('q-no').onclick=function(){ if(!$('q-yes').classList.contains('picked')&&!$('q-no').classList.contains('picked')) answer(false); };
+$('b-flip').onclick=function(){ hap(); show('scr-flip'); setTimeout(pshh,450); };
+$('b-birth').onclick=function(){
+  hap();
+  $('cre-birth').innerHTML=creatureSVG(1,4,160);
+  show('scr-birth');
+};
+$('b-tocard').onclick=function(){ hap(); openHome(); };
+$('b-done').onclick=function(){ hap(); tick(); finishDay(); };
+$('b-home').onclick=function(){ hap(); openHome(); };
+$('b-share').onclick=doShare;
+$('b-duel').onclick=doDuel;
+$('b-tg').onclick=function(){ openSheet('sheet-tg'); };
+$('b-chat').onclick=function(){ openSheet('sheet-chat'); };
+$('ovl').onclick=closeSheets;
+var closers=document.querySelectorAll('[data-close]');
+for (var i=0;i<closers.length;i++) closers[i].onclick=closeSheets;
+$('tm-hook').onclick=timeMachine;
+$('tm-home').onclick=timeMachine;
+$('tm-reset').onclick=resetDemo;
+$('tg-ava').innerHTML=faceSVG(4,26);
+
+initChat();
+route();
+
+})(); }
+
+/* ---------- мини-самопроверка для jsc ---------- */
+if (typeof document === 'undefined'){
+  function assert(c,m){ if(!c) throw new Error('FAIL: '+m); }
+  assert(calcIndex([],false)===0,'empty index');
+  assert(calcIndex(['sleep','sweets','gym','phone','wb'],false)===100,'full index');
+  assert(calcIndex(['sleep','sweets','gym','phone','wb'],true)===Math.round((68-14)/68*100),'dzen discount');
+  assert(calcIndex([],true)===0,'clamp low');
+  assert(verdict(3).indexOf('святой')>0,'verdict 3');
+  assert(dayDiff('2026-07-17','2026-07-18')===1,'daydiff');
+  assert(addDaysKey('2026-07-31',1)==='2026-08-01','adddays');
+  assert(stageFor(1)===1&&stageFor(3)===2&&stageFor(7)===3&&stageFor(14)===4,'stages');
+  var st={days:{},last:null,streak:0,best:0,frozen:{},lastFreezeWeek:null};
+  assert(updateStreak(st,'2026-07-10')==='first'&&st.streak===1,'streak first');
+  assert(updateStreak(st,'2026-07-11')==='inc'&&st.streak===2,'streak inc');
+  assert(updateStreak(st,'2026-07-13')==='freeze'&&st.streak===3,'streak freeze');
+  assert(st.frozen['2026-07-12']===true,'frozen date');
+  assert(updateStreak(st,'2026-07-15')==='burn'&&st.streak===1,'streak burn same week freeze used');
+  assert(updateStreak(st,'2026-07-15')==='same','streak same');
+  var days={
+    '2026-07-11':{mood:2,habits:['phone'],dzen:false,index:calcIndex(['phone'],false)},
+    '2026-07-12':{mood:4,habits:['sleep','gym'],dzen:true,index:calcIndex(['sleep','gym'],true)},
+    '2026-07-13':{mood:5,habits:['sleep','gym'],dzen:true,index:calcIndex(['sleep','gym'],true)}
+  };
+  assert(typeof bestFinding(days)==='string','finding exists');
+  assert(bestFinding({'a':{mood:3,habits:[],dzen:false}})===null,'finding needs 3 days');
+  var demo=buildDemoState('2026-07-18');
+  assert(Object.keys(demo.days).length===7&&demo.streak===7&&demo.last==='2026-07-18','demo state');
+  assert(percentile(0)>=3&&percentile(100)<=97,'percentile clamp');
+  print('ALL TESTS PASSED');
+}
+</script>
+</body>
+</html>

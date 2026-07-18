@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>DZEN · Огонь серии</title>
+<style>
+  :root{
+    --paper:#F4F1EA; --zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F; --line:#DFDACE; --card:#FBFAF6;
+    --lime:#A8C96B; --lime-d:#56732E; --lime-l:#ECF0DD;
+    --terra:#C0563E; --terra-d:#8A3A28; --terra-l:#F4E3DD;
+    --mango:#C2791B; --grape:#7A5C93;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --spring:cubic-bezier(.34,1.42,.5,1);
+    --r:24px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{font-size:16px}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+    background:var(--paper); color:var(--ink);
+    min-height:100svh; display:flex; flex-direction:column; align-items:center;
+    line-height:1.4; overflow-x:hidden;
+  }
+  #app{width:100%; max-width:560px; padding:20px 20px 8px; flex:1; display:flex; flex-direction:column}
+  .screen{flex:1; display:flex; flex-direction:column; animation:screenIn .55s var(--ease) both}
+  @keyframes screenIn{from{opacity:0; transform:translateY(14px) scale(.985)} to{opacity:1; transform:none}}
+
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:2px 2px 18px}
+  .brand{font-size:.78rem; letter-spacing:.14em; color:var(--muted); font-weight:600}
+  .brand b{color:var(--lime-d)}
+  .top-streak{display:flex; align-items:center; gap:6px; font-weight:700; font-size:.95rem; color:var(--terra-d)}
+  .top-streak svg{width:16px; height:19px}
+
+  h1{font-size:2.1rem; line-height:1.13; letter-spacing:-.02em; font-weight:800}
+  h2{font-size:1.45rem; line-height:1.2; letter-spacing:-.015em; font-weight:800}
+  .sub{color:var(--muted); font-size:1.02rem; margin-top:12px}
+  .small{font-size:.85rem; color:var(--muted)}
+  .spacer{flex:1}
+
+  .btn{
+    display:block; width:100%; border:none; cursor:pointer; user-select:none;
+    font:inherit; font-weight:700; font-size:1.1rem;
+    padding:19px 24px; border-radius:22px;
+    transition:transform .25s var(--spring), background .2s var(--ease), box-shadow .2s;
+    text-align:center;
+  }
+  .btn:active{transform:scale(.965)}
+  .btn-primary{background:var(--ink); color:var(--paper)}
+  .btn-lime{background:var(--lime); color:var(--ink); box-shadow:0 10px 26px -12px rgba(86,115,46,.55)}
+  .btn-ghost{background:transparent; color:var(--muted); border:1.5px solid var(--line)}
+  .btn+.btn{margin-top:12px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:22px}
+
+  /* ── flame ─────────────────────────── */
+  .flame-wrap{position:relative; display:flex; flex-direction:column; align-items:center}
+  .flame{transform-origin:50% 92%; animation:breathe 2.8s ease-in-out infinite alternate}
+  .flame-inner{transform-origin:50% 90%; animation:flick 1.7s ease-in-out infinite alternate}
+  @keyframes breathe{
+    from{transform:scale(1,1) rotate(-1.2deg)}
+    45%{transform:scale(1.035,1.06) rotate(.6deg)}
+    to{transform:scale(1.01,1.03) rotate(1.2deg)}
+  }
+  @keyframes flick{
+    from{transform:scale(.96,.94) rotate(1.6deg)}
+    to{transform:scale(1.05,1.09) rotate(-1.8deg)}
+  }
+  .flame-dead .flame,.flame-dead .flame-inner{animation:none}
+  .streak-num{
+    font-size:6.2rem; font-weight:850; letter-spacing:-.045em; line-height:1;
+    font-variant-numeric:tabular-nums; margin-top:6px;
+  }
+  .streak-cap{color:var(--muted); font-size:1rem; margin-top:6px}
+  .pop-in{animation:popIn .7s var(--spring) both}
+  @keyframes popIn{from{opacity:0; transform:scale(.4)} 70%{transform:scale(1.06)} to{opacity:1; transform:scale(1)}}
+
+  /* sparks */
+  .spark{
+    position:absolute; width:8px; height:8px; border-radius:50%;
+    left:50%; top:38%; pointer-events:none; opacity:0;
+    animation:spark 1s var(--ease) both;
+  }
+  @keyframes spark{
+    0%{opacity:0; transform:translate(0,0) scale(.4)}
+    15%{opacity:1}
+    100%{opacity:0; transform:translate(var(--dx),var(--dy)) scale(1)}
+  }
+
+  /* ── quiz ─────────────────────────── */
+  .q-progress{display:flex; align-items:center; gap:10px; margin-bottom:26px}
+  .q-dots{display:flex; gap:7px}
+  .q-dot{width:9px; height:9px; border-radius:50%; background:var(--line); transition:background .3s, transform .3s var(--spring)}
+  .q-dot.on{background:var(--lime-d); transform:scale(1.25)}
+  .q-count{margin-left:auto; font-size:.85rem; color:var(--muted); font-variant-numeric:tabular-nums}
+  .q-yday{font-size:.82rem; letter-spacing:.12em; font-weight:700; color:var(--terra); text-transform:uppercase; margin-bottom:10px}
+  .q-title{font-size:1.9rem; font-weight:800; line-height:1.15; letter-spacing:-.02em}
+  .q-cap{color:var(--muted); margin-top:12px; font-size:1rem}
+  .q-btns{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:34px}
+  .q-btn{
+    border:none; cursor:pointer; font:inherit; font-weight:800; font-size:1.35rem;
+    padding:26px 10px; border-radius:26px; transition:transform .25s var(--spring);
+  }
+  .q-btn:active{transform:scale(.94)}
+  .q-yes{background:var(--lime); color:var(--ink)}
+  .q-no{background:var(--card); color:var(--muted); border:1.5px solid var(--line)}
+  .feedback{
+    margin-top:22px; min-height:74px;
+  }
+  .fb-card{
+    background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 16px;
+    animation:popIn .5s var(--spring) both; font-size:.98rem;
+  }
+  .fb-card.yes{border-color:var(--lime); background:var(--lime-l)}
+  .fb-chips{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap}
+  .chip{font-size:.78rem; font-weight:700; padding:4px 10px; border-radius:99px}
+  .chip-h{background:var(--lime-l); color:var(--lime-d); border:1px solid var(--lime)}
+  .chip-p{background:var(--terra-l); color:var(--terra-d); border:1px solid var(--terra)}
+  .zeig{
+    margin-top:18px; display:flex; align-items:center; gap:10px;
+    color:var(--muted); font-size:.85rem; animation:popIn .6s var(--spring) both;
+  }
+  .zeig-num{filter:blur(7px); font-weight:800; color:var(--terra); font-size:1.1rem; user-select:none}
+
+  /* ── result cascade ─────────────────── */
+  .cascade>*{opacity:0}
+  .cascade>.shown{opacity:1}
+  .calc-dots span{display:inline-block; width:9px; height:9px; margin:0 4px; border-radius:50%; background:var(--muted); animation:dotb 1s infinite ease-in-out}
+  .calc-dots span:nth-child(2){animation-delay:.16s}
+  .calc-dots span:nth-child(3){animation-delay:.32s}
+  @keyframes dotb{0%,100%{transform:translateY(0); opacity:.4} 50%{transform:translateY(-7px); opacity:1}}
+  .res-line{font-size:1.25rem; font-weight:700; line-height:1.3; letter-spacing:-.01em}
+  .res-phrase{color:var(--muted); font-weight:400; font-size:1.02rem; margin-top:8px}
+
+  /* ── milestone ──────────────────────── */
+  .mile-card{
+    background:var(--zen); border:1.5px solid var(--lime); border-radius:28px; padding:30px 24px;
+    text-align:center; animation:popIn .8s var(--spring) both;
+  }
+  .mile-tag{font-size:.78rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--lime-d)}
+  .mile-title{font-size:1.7rem; font-weight:850; letter-spacing:-.02em; margin-top:10px; line-height:1.15}
+  .mile-sub{color:var(--muted); margin-top:12px; font-size:1rem}
+  .can{display:inline-block; margin:20px 0 4px; filter:drop-shadow(0 12px 18px rgba(86,115,46,.28))}
+
+  /* ── done screen ────────────────────── */
+  .done-badge{
+    display:inline-flex; align-items:center; gap:8px; align-self:center;
+    background:var(--lime-l); color:var(--lime-d); border:1px solid var(--lime);
+    font-size:.8rem; font-weight:700; padding:6px 14px; border-radius:99px;
+  }
+  .stat-row{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:18px}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 8px; text-align:center}
+  .stat b{display:block; font-size:1.5rem; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .stat span{font-size:.75rem; color:var(--muted)}
+  .stat.s-h b{color:var(--lime-d)} .stat.s-p b{color:var(--terra)}
+  .timer-card{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:14px}
+  .timer{font-variant-numeric:tabular-nums; font-weight:800; font-size:1.35rem; letter-spacing:-.01em}
+  .warn{
+    background:var(--terra-l); border:1px solid var(--terra); color:var(--terra-d);
+    border-radius:18px; padding:13px 16px; font-size:.92rem; font-weight:600;
+    display:flex; gap:10px; align-items:center; margin-bottom:20px;
+    animation:popIn .6s var(--spring) both;
+  }
+  .warn svg{flex:none; width:15px; height:18px}
+
+  /* ── calendar ───────────────────────── */
+  .cal{margin-top:14px}
+  .cal-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px}
+  .cal-month{font-weight:800; font-size:1.05rem; text-transform:capitalize}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
+  .cal-dow{font-size:.68rem; color:var(--muted); text-align:center; padding-bottom:2px}
+  .cal-day{
+    aspect-ratio:1; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    font-size:.78rem; color:var(--muted); position:relative; font-variant-numeric:tabular-nums;
+  }
+  .cal-day.fire{background:var(--terra-l); color:transparent}
+  .cal-day.fire svg{position:absolute; width:14px; height:17px}
+  .cal-day.frozen{background:var(--zen); color:transparent}
+  .cal-day.frozen::after{content:"❄"; position:absolute; color:var(--muted); font-size:.85rem}
+  .cal-day.today{outline:1.5px solid var(--ink); outline-offset:1px}
+  .cal-day.future{opacity:.35}
+
+  /* ── share ──────────────────────────── */
+  .share-card{
+    background:var(--ink); color:var(--paper); border-radius:28px; padding:28px 24px;
+    text-align:center; margin-top:22px;
+  }
+  .share-card .streak-num{font-size:4.6rem; color:#fff; margin-top:2px}
+  .share-flame{display:flex; justify-content:center}
+  .share-emoji{font-size:1.25rem; letter-spacing:.18em; margin-top:14px}
+  .share-line{color:#B9B5A8; font-size:.92rem; margin-top:10px}
+  .share-url{color:#8C887C; font-size:.72rem; letter-spacing:.12em; margin-top:16px}
+
+  .next-mile{margin-top:14px}
+  .bar{height:8px; border-radius:99px; background:var(--line); overflow:hidden; margin-top:10px}
+  .bar i{display:block; height:100%; background:linear-gradient(90deg,var(--mango),var(--terra)); border-radius:99px; transition:width 1s var(--ease)}
+  .freeze-note{display:flex; gap:10px; align-items:center; margin-top:14px; font-size:.88rem; color:var(--muted)}
+
+  footer{
+    width:100%; max-width:560px; padding:18px 24px 26px; text-align:center;
+  }
+  .demo-link{
+    background:none; border:none; cursor:pointer; font:inherit; font-size:.75rem; color:var(--muted);
+    text-decoration:underline; text-underline-offset:3px; opacity:.75;
+  }
+  .demo-badge{
+    display:inline-block; font-size:.68rem; font-weight:700; letter-spacing:.1em;
+    background:var(--grape); color:#fff; padding:3px 9px; border-radius:99px; margin-left:8px; vertical-align:middle;
+  }
+
+  .list-titles{margin-top:16px; display:flex; flex-direction:column; gap:8px}
+  .lt{display:flex; align-items:center; gap:12px; font-size:.92rem; padding:11px 14px; border:1px solid var(--line); border-radius:16px; background:var(--card)}
+  .lt b{font-variant-numeric:tabular-nums; color:var(--terra-d); flex:none; width:2.2em}
+  .lt.got{border-color:var(--lime); background:var(--lime-l)}
+  .lt span{color:var(--muted)} .lt.got span{color:var(--ink)}
+
+  @media (min-width:700px){
+    #app{padding-top:44px}
+    h1{font-size:2.5rem}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001s !important; transition-duration:.001s !important}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<footer id="foot"></footer>
+
+<script>
+'use strict';
+
+/* ═══════════ данные ═══════════ */
+var HABITS=[
+  {id:'sleep', q:'Лёг до 23:00', cap:'вместо второго сезона, который сам себя не досмотрит', health:18, pain:14,
+   yes:'Здоровье кивнуло, сериал обиделся.', no:'Сезон досмотрен. Сон — нет.'},
+  {id:'sweets', q:'Не взял сладкое к чаю', cap:'вместо печенья, которое так грустно на тебя смотрит', health:12, pain:17,
+   yes:'Оплачено силой воли, сдачи не будет.', no:'Печенье победило. Оно умеет.'},
+  {id:'gym', q:'Дошёл до зала через лень', cap:'вместо дивана, который считал тебя своим', health:23, pain:15,
+   yes:'Диван обиделся. Переживёт.', no:'Диван отстоял своё.'},
+  {id:'phone', q:'Не залип в телефоне', cap:'вместо ленты, в которую зашёл на минутку ещё час назад', health:10, pain:12,
+   yes:'Час минутки остался тебе.', no:'Минутка длиной в час. Классика.'},
+  {id:'wb', q:'Не купил из вайлбериса', cap:'вместо корзины, где уже лежала твоя новая жизнь', health:8, pain:10,
+   yes:'Корзина закрыта. Кошелёк выдохнул.', no:'Новая жизнь уже едет в пункт выдачи.'}
+];
+var PHRASES=[
+  'Пока ты просто живёшь. Ни пользы, ни боли. Серия — всё равно твоя: она про честность.',
+  'Один подвиг. Скромно, зато без вранья себе.',
+  'Два подвига. Здоровье кивнуло, диван обиделся.',
+  'Три подвига за день. Ты почти святой, только злой и голодный.',
+  'Четыре из пяти. Нимб уже светится, терпение уже мигает.',
+  'Пять из пяти. Идеальный человек — и абсолютно вымотанный.'
+];
+var MILES=[
+  {days:3,  title:'Три дня честности',        sub:'Это уже не случайность. Это ты.'},
+  {days:7,  title:'Неделя без вранья себе',   sub:'7 дней честности. Это надо не терпеть, а отметить.'},
+  {days:14, title:'Две недели. Характер',     sub:'Огонь стал похож на тебя. Спокойный и упрямый.'},
+  {days:30, title:'Месяц огня',               sub:'Привычка, которую не надо терпеть. Так, оказывается, можно.'}
+];
+var KEY='dzen_streak_v11';
+
+/* ═══════════ состояние ═══════════ */
+var S=load();
+function load(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(raw){ var s=JSON.parse(raw); if(s && s.history) return s; }
+  }catch(e){}
+  return {streak:0, best:0, history:{}, lastCheckin:null, freezeWeek:null, milestonesSeen:[], demo:false};
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ═══════════ даты ═══════════ */
+function pad(n){ return (n<10?'0':'')+n; }
+function dstr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function fromStr(s){ var p=s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function addDays(d,n){ var x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function diffDays(a,b){ return Math.round((fromStr(b)-fromStr(a))/86400000); }
+function weekKey(d){ var x=new Date(d.getTime()); var wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); return dstr(x); }
+function todayStr(){ return dstr(new Date()); }
+function freezeAvailable(){ return S.freezeWeek!==weekKey(new Date()); }
+function msToMidnight(){
+  var n=new Date(); var m=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1,0,0,0);
+  return m-n;
+}
+
+/* ═══════════ утилиты ═══════════ */
+var $app=document.getElementById('app');
+var $foot=document.getElementById('foot');
+var timerId=null;
+function haptic(ms){ try{ if(navigator.vibrate) navigator.vibrate(ms||12); }catch(e){} }
+var AC=null;
+function tone(freq,dur,gain,type){
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    var o=AC.createOscillator(), g=AC.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(gain||0.06, AC.currentTime+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime+(dur||0.12));
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime+(dur||0.12)+0.05);
+  }catch(e){}
+}
+function click(){ tone(620,0.06,0.04,'triangle'); }
+function chime(){ tone(523,0.22,0.06); setTimeout(function(){tone(784,0.3,0.06);},110); }
+function pshh(){ /* лёгкое «пшш» банки */
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    var len=AC.sampleRate*0.35, buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
+    for(var i=0;i<len;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2); }
+    var src=AC.createBufferSource(); src.buffer=buf;
+    var f=AC.createBiquadFilter(); f.type='highpass'; f.frequency.value=3000;
+    var g=AC.createGain(); g.gain.value=0.09;
+    src.connect(f); f.connect(g); g.connect(AC.destination); src.start();
+  }catch(e){}
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function setScreen(html){
+  if(timerId){ clearInterval(timerId); timerId=null; }
+  $app.innerHTML='<div class="screen">'+html+'</div>';
+  window.scrollTo(0,0);
+}
+function on(sel,fn){
+  var el=$app.querySelector(sel);
+  if(el) el.addEventListener('click', function(ev){ haptic(12); fn(ev); });
+  return el;
+}
+
+/* ═══════════ svg ═══════════ */
+function flameSVG(w, dead){
+  var h=Math.round(w*1.22);
+  var outer = dead ? '#DFDACE' : 'url(#gf1)';
+  var inner = dead ? '#EFEDE5' : 'url(#gf2)';
+  return '<svg class="'+(dead?'':'')+'" width="'+w+'" height="'+h+'" viewBox="0 0 120 146" fill="none" aria-hidden="true">'
+    +'<defs>'
+    +'<linearGradient id="gf1" x1="60" y1="10" x2="60" y2="140" gradientUnits="userSpaceOnUse">'
+    +'<stop stop-color="#E0913C"/><stop offset=".55" stop-color="#C0563E"/><stop offset="1" stop-color="#8A3A28"/></linearGradient>'
+    +'<linearGradient id="gf2" x1="60" y1="60" x2="60" y2="132" gradientUnits="userSpaceOnUse">'
+    +'<stop stop-color="#F4D8A8"/><stop offset="1" stop-color="#E0913C"/></linearGradient>'
+    +'</defs>'
+    +'<g class="flame"><path fill="'+outer+'" d="M60 6 C58 30 30 48 24 78 C19 104 34 132 60 138 C86 132 101 104 96 78 C90 48 62 30 60 6 Z M60 6 C63 22 78 36 78 36 C70 26 63 15 60 6 Z"/></g>'
+    +'<g class="flame-inner"><path fill="'+inner+'" d="M60 66 C58 80 44 90 42 104 C40 119 49 130 60 133 C71 130 80 119 78 104 C76 90 62 80 60 66 Z"/></g>'
+    +'</svg>';
+}
+function miniFlame(){
+  return '<svg viewBox="0 0 120 146" fill="none" aria-hidden="true"><path fill="#C0563E" d="M60 6 C58 30 30 48 24 78 C19 104 34 132 60 138 C86 132 101 104 96 78 C90 48 62 30 60 6 Z"/><path fill="#F4D8A8" d="M60 66 C58 80 44 90 42 104 C40 119 49 130 60 133 C71 130 80 119 78 104 C76 90 62 80 60 66 Z"/></svg>';
+}
+function canSVG(w){
+  var h=Math.round(w*1.9);
+  return '<svg class="can" width="'+w+'" height="'+h+'" viewBox="0 0 100 190" fill="none" aria-hidden="true">'
+    +'<defs><linearGradient id="gc1" x1="0" y1="0" x2="100" y2="0" gradientUnits="userSpaceOnUse">'
+    +'<stop stop-color="#8FB253"/><stop offset=".45" stop-color="#C4DB92"/><stop offset=".62" stop-color="#A8C96B"/><stop offset="1" stop-color="#6F8F3D"/></linearGradient></defs>'
+    +'<rect x="10" y="14" width="80" height="164" rx="16" fill="url(#gc1)"/>'
+    +'<path d="M14 22 Q50 6 86 22 L86 30 Q50 16 14 30 Z" fill="#DDE7C4"/>'
+    +'<ellipse cx="50" cy="15" rx="37" ry="7" fill="#EFF2E4" stroke="#B9C48F"/>'
+    +'<ellipse cx="50" cy="15" rx="24" ry="4.5" fill="#DFDACE"/>'
+    +'<text x="60" y="96" text-anchor="middle" transform="rotate(-90 60 96)" font-family="-apple-system,system-ui,sans-serif" font-weight="800" font-size="30" letter-spacing="6" fill="#2B2A26">DZEN</text>'
+    +'<text x="50" y="170" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-weight="600" font-size="8.5" letter-spacing="1.5" fill="#405222">0 Г САХАРА</text>'
+    +'</svg>';
+}
+
+/* ═══════════ расчёты дня ═══════════ */
+function dayStats(yesIds){
+  var h=0,p=0;
+  for(var i=0;i<HABITS.length;i++){
+    if(yesIds.indexOf(HABITS[i].id)>=0){ h+=HABITS[i].health; p+=HABITS[i].pain; }
+  }
+  return {count:yesIds.length, health:h, pain:p};
+}
+function nextMilestone(){
+  for(var i=0;i<MILES.length;i++){ if(MILES[i].days>S.streak) return MILES[i]; }
+  return null;
+}
+function last7Emoji(){
+  var out='', t=new Date();
+  for(var i=6;i>=0;i--){
+    var k=dstr(addDays(t,-i)), rec=S.history[k];
+    out += rec ? (rec.t==='freeze' ? '🧊' : '🔥') : '▫️';
+  }
+  return out;
+}
+function fmtHM(ms){
+  var h=Math.floor(ms/3600000), m=Math.floor(ms%3600000/60000);
+  return h+' ч '+pad(m)+' мин';
+}
+function fmtHMS(ms){
+  var h=Math.floor(ms/3600000), m=Math.floor(ms%3600000/60000), s=Math.floor(ms%60000/1000);
+  return pad(h)+':'+pad(m)+':'+pad(s);
+}
+
+/* ═══════════ маршрутизация ═══════════ */
+function route(){
+  renderFoot();
+  var t=todayStr();
+  if(S.history[t]){ renderDone(false); return; }
+  if(!S.lastCheckin || S.streak<1){ renderIntro(true); return; }
+  var d=diffDays(S.lastCheckin, t);
+  if(d<=1){ renderIntro(false); return; }
+  if(d===2 && freezeAvailable()){ renderFreeze(); return; }
+  renderBurn();
+}
+
+/* ═══════════ экраны ═══════════ */
+function topbar(showStreak){
+  return '<div class="topbar"><span class="brand"><b>DZEN</b> · огонь серии</span>'
+    +(showStreak && S.streak>0 ? '<span class="top-streak">'+miniFlame()+' '+S.streak+'</span>' : '')
+    +'</div>';
+}
+function eveningWarn(){
+  var now=new Date();
+  if(S.streak>0 && now.getHours()>=18){
+    return '<div class="warn">'+miniFlame()+'<span>Серия сгорит через '+fmtHM(msToMidnight())+'. Один чек-ин — и огонь живёт.</span></div>';
+  }
+  return '';
+}
+
+function renderIntro(first){
+  var html=topbar(!first);
+  if(first){
+    html+='<div class="spacer"></div>'
+      +'<div class="flame-wrap" style="opacity:.9">'+flameSVG(96,false)+'</div>'
+      +'<h1 style="margin-top:26px">Сколько дней подряд ты честен с собой?</h1>'
+      +'<p class="sub">Пять вопросов про вчера. Десять секунд. Каждый честный день — плюс один к огню.</p>'
+      +'<div class="spacer"></div>'
+      +'<button class="btn btn-lime" id="go">Зажечь серию</button>'
+      +'<p class="small" style="text-align:center; margin-top:14px">Серия — про честность, а не про подвиги.</p>';
+  }else{
+    html+=eveningWarn()
+      +'<div class="spacer"></div>'
+      +'<div class="flame-wrap">'+flameSVG(120,false)
+      +'<div class="streak-num">'+S.streak+'</div>'
+      +'<div class="streak-cap">'+dayWord(S.streak)+' подряд. День '+(S.streak+1)+' ждёт.</div></div>'
+      +'<div class="spacer"></div>'
+      +'<button class="btn btn-lime" id="go">Чек-ин за вчера</button>';
+  }
+  setScreen(html);
+  on('#go', function(){ click(); startQuiz(); });
+}
+function dayWord(n){
+  var a=n%10, b=n%100;
+  if(b>=11 && b<=14) return n+' дней';
+  if(a===1) return n+' день';
+  if(a>=2 && a<=4) return n+' дня';
+  return n+' дней';
+}
+
+function renderFreeze(){
+  var missed=dstr(addDays(fromStr(todayStr()),-1));
+  var html=topbar(true)
+    +'<div class="spacer"></div>'
+    +'<div style="text-align:center; font-size:3.4rem">❄</div>'
+    +'<h2 style="text-align:center; margin-top:16px">Вчера огня не было</h2>'
+    +'<p class="sub" style="text-align:center">Серия из '+dayWord(S.streak)+' на волоске. Заморозка спасает один пропущенный день — она одна на неделю.</p>'
+    +'<div class="spacer"></div>'
+    +'<button class="btn btn-lime" id="fz">Использовать заморозку ❄</button>'
+    +'<button class="btn btn-ghost" id="burn">Нет, пусть горит</button>';
+  setScreen(html);
+  on('#fz', function(){
+    S.history[missed]={t:'freeze'};
+    S.freezeWeek=weekKey(new Date());
+    S.lastCheckin=missed;
+    save(); chime();
+    startQuiz();
+  });
+  on('#burn', function(){ doBurn(); renderBurn(); });
+}
+function doBurn(){
+  S.best=Math.max(S.best,S.streak);
+  S.streak=0; save();
+}
+
+function renderBurn(){
+  var lost=S.streak>0 ? S.streak : S.best;
+  if(S.streak>0) doBurn();
+  var html=topbar(false)
+    +'<div class="spacer"></div>'
+    +'<div class="flame-wrap flame-dead">'+flameSVG(110,true)+'</div>'
+    +'<h1 style="text-align:center; margin-top:22px">Серия сгорела.<br>Огонь — нет.</h1>'
+    +'<p class="sub" style="text-align:center">'+(lost>0 ? 'Те '+dayWord(lost)+' были настоящими — их никто не отнимет. ' : '')
+    +'Серия — это счётчик. Честность — навык. Навык остался.</p>'
+    +'<div class="spacer"></div>'
+    +'<button class="btn btn-lime" id="re">Разжечь заново</button>';
+  setScreen(html);
+  on('#re', function(){ click(); startQuiz(); });
+}
+
+/* ── чек-ин ── */
+var qi=0, yesIds=[];
+function startQuiz(){ qi=0; yesIds=[]; renderQ(); }
+function renderQ(){
+  var h=HABITS[qi];
+  var dots='';
+  for(var i=0;i<5;i++) dots+='<span class="q-dot'+(i<=qi?' on':'')+'"></span>';
+  var html=topbar(true)
+    +'<div class="q-progress"><div class="q-dots">'+dots+'</div><span class="q-count">'+(qi+1)+' из 5</span></div>'
+    +'<div class="q-yday">Вчера</div>'
+    +'<div class="q-title">'+esc(h.q)+'?</div>'
+    +'<div class="q-cap">'+esc(h.cap)+'</div>'
+    +'<div class="q-btns">'
+    +'<button class="q-btn q-yes" id="yes">Да</button>'
+    +'<button class="q-btn q-no" id="no">Нет</button>'
+    +'</div>'
+    +'<div class="feedback" id="fb"></div>'
+    +(qi>=3 ? '<div class="zeig">индекс дня уже считается… <span class="zeig-num">'+ (34+qi*13) +'</span></div>' : '');
+  setScreen(html);
+  on('#yes', function(){ answer(true); });
+  on('#no',  function(){ answer(false); });
+}
+function answer(yes){
+  var h=HABITS[qi];
+  click();
+  if(yes) yesIds.push(h.id);
+  var fb=$app.querySelector('#fb');
+  if(fb){
+    fb.innerHTML='<div class="fb-card'+(yes?' yes':'')+'">'+esc(yes?h.yes:h.no)
+      +(yes?'<div class="fb-chips"><span class="chip chip-h">+'+h.health+' польза</span><span class="chip chip-p">+'+h.pain+' страдание</span></div>':'')
+      +'</div>';
+  }
+  var yb=$app.querySelector('#yes'), nb=$app.querySelector('#no');
+  if(yb) yb.disabled=true; if(nb) nb.disabled=true;
+  setTimeout(function(){
+    qi++;
+    if(qi<HABITS.length) renderQ(); else renderResult();
+  }, 950);
+}
+
+/* ── результат дня + серия +1 ── */
+function renderResult(){
+  var st=dayStats(yesIds);
+  var t=todayStr();
+  /* защита: сегодня записывается только один раз */
+  if(!S.history[t]){
+    S.streak+=1;
+    S.best=Math.max(S.best,S.streak);
+    S.history[t]={t:'fire', yes:yesIds.slice(), h:st.health, p:st.pain};
+    S.lastCheckin=t;
+    save();
+  }
+  var mile=null;
+  for(var i=0;i<MILES.length;i++){
+    if(MILES[i].days===S.streak && S.milestonesSeen.indexOf(MILES[i].days)<0){ mile=MILES[i]; break; }
+  }
+  var html=topbar(false)
+    +'<div class="spacer"></div>'
+    +'<div class="cascade" id="cas" style="text-align:center">'
+    +'<div id="c1"><p class="small" style="margin-bottom:10px">считаем день…</p><div class="calc-dots"><span></span><span></span><span></span></div></div>'
+    +'<div id="c2" style="margin-top:26px"><div class="res-line">'+st.count+' из 5 — подвиги за вчера</div>'
+    +'<div class="res-phrase">'+esc(PHRASES[st.count])+'</div>'
+    +'<div class="fb-chips" style="justify-content:center; margin-top:14px"><span class="chip chip-h">+'+st.health+' польза</span><span class="chip chip-p">+'+st.pain+' страдание</span></div></div>'
+    +'<div id="c3" style="margin-top:34px"><div class="flame-wrap" id="fl"></div></div>'
+    +'</div>'
+    +'<div class="spacer"></div>'
+    +'<button class="btn btn-primary" id="next" style="visibility:hidden">Дальше</button>';
+  setScreen(html);
+  var c1=$app.querySelector('#c1'), c2=$app.querySelector('#c2'), c3=$app.querySelector('#c3');
+  c1.classList.add('shown');
+  setTimeout(function(){
+    c1.style.display='none'; c2.classList.add('shown'); haptic(14); click();
+  }, 1400);
+  setTimeout(function(){
+    c3.classList.add('shown');
+    var fl=$app.querySelector('#fl');
+    fl.innerHTML='<div class="pop-in">'+flameSVG(120,false)+'</div>'
+      +'<div class="streak-num pop-in" style="animation-delay:.12s">'+S.streak+'</div>'
+      +'<div class="streak-cap pop-in" style="animation-delay:.22s">'+(S.streak===1?'день серии. Огонь зажжён.':dayWord(S.streak)+' подряд · серия +1')+'</div>';
+    sparks(fl); chime(); haptic(24);
+    var nx=$app.querySelector('#next');
+    nx.style.visibility='visible';
+    nx.classList.add('pop-in');
+  }, 2500);
+  on('#next', function(){
+    if(mile){ renderMile(mile); } else { renderDone(true); }
+  });
+}
+function sparks(host){
+  var colors=['#A8C96B','#C2791B','#C0563E','#E0913C'];
+  for(var i=0;i<16;i++){
+    var s=document.createElement('span');
+    s.className='spark';
+    var ang=Math.random()*Math.PI*2, dist=60+Math.random()*90;
+    s.style.setProperty('--dx', Math.cos(ang)*dist+'px');
+    s.style.setProperty('--dy', (Math.sin(ang)*dist-40)+'px');
+    s.style.background=colors[i%4];
+    s.style.animationDelay=(Math.random()*0.25)+'s';
+    host.appendChild(s);
+  }
+}
+
+/* ── веха: DZEN выдаёт награду ── */
+function renderMile(mile){
+  S.milestonesSeen.push(mile.days); save();
+  var html=topbar(false)
+    +'<div class="spacer"></div>'
+    +'<div class="mile-card">'
+    +'<div class="mile-tag">веха серии · '+mile.days+' 🔥</div>'
+    +'<div class="mile-title">«'+esc(mile.title)+'»</div>'
+    +canSVG(74)
+    +'<div class="mile-sub">'+esc(mile.sub)+'</div>'
+    +'<div class="mile-sub" style="margin-top:14px; color:var(--lime-d); font-weight:700">DZEN. Польза, которую не надо терпеть.</div>'
+    +'</div>'
+    +'<div class="spacer"></div>'
+    +'<button class="btn btn-primary" id="ok">Забрать титул</button>';
+  setScreen(html);
+  pshh(); haptic(30);
+  on('#ok', function(){ click(); renderDone(true); });
+}
+
+/* ── экран «сегодня уже был» / финал дня ── */
+function renderDone(fresh){
+  var t=todayStr(), rec=S.history[t]||{};
+  var st = rec.yes ? dayStats(rec.yes) : null;
+  var nm = nextMilestone();
+  var html=topbar(false)
+    +'<div style="display:flex; flex-direction:column">'
+    +'<span class="done-badge">'+(fresh?'серия обновлена':'сегодня уже отмечено')+' · день '+S.streak+'</span>'
+    +'<div class="flame-wrap" style="margin-top:22px">'+flameSVG(104,false)
+    +'<div class="streak-num" style="font-size:4.6rem">'+S.streak+'</div>'
+    +'<div class="streak-cap">'+dayWord(S.streak).split(' ')[1]+' подряд честен с собой'+(S.best>S.streak?' · рекорд '+S.best:'')+'</div></div>';
+  if(st){
+    html+='<div class="stat-row">'
+      +'<div class="stat"><b>'+st.count+'/5</b><span>подвиги</span></div>'
+      +'<div class="stat s-h"><b>+'+st.health+'</b><span>польза</span></div>'
+      +'<div class="stat s-p"><b>+'+st.pain+'</b><span>страдание</span></div>'
+      +'</div>'
+      +'<p class="small" style="text-align:center; margin-top:12px">'+esc(PHRASES[st.count])+'</p>';
+  }else if(rec.t==='freeze'){
+    html+='<p class="small" style="text-align:center; margin-top:12px">Сегодня спасла заморозка ❄ — огонь живёт.</p>';
+  }
+  if(nm){
+    html+='<div class="card next-mile"><div style="display:flex; justify-content:space-between; align-items:baseline">'
+      +'<b style="font-size:.95rem">Веха «'+esc(nm.title)+'»</b>'
+      +'<span class="small">'+dayWord(nm.days-S.streak)+'</span></div>'
+      +'<div class="bar"><i style="width:'+Math.round(S.streak/nm.days*100)+'%"></i></div>'
+      +'<p class="small" style="margin-top:10px">На вехе DZEN выдаёт награду. Не терпеть, а отметить.</p></div>';
+  }
+  html+='<div class="card timer-card"><span class="small">новый чек-ин — про сегодня,<br>откроется через</span><span class="timer" id="tmr">'+fmtHMS(msToMidnight())+'</span></div>'
+    +'<div class="freeze-note">❄ заморозка на этой неделе: '+(freezeAvailable()?'есть — спасёт один пропуск':'уже потрачена')+'</div>'
+    +renderCal()
+    +renderTitles()
+    +'<div class="share-card" id="shot">'
+    +'<div class="share-flame">'+flameSVG(64,false)+'</div>'
+    +'<div class="streak-num">'+S.streak+'</div>'
+    +'<div style="font-weight:700; margin-top:2px">Моя серия: '+S.streak+' 🔥</div>'
+    +'<div class="share-emoji">'+last7Emoji()+'</div>'
+    +'<div class="share-line">'+dayWord(S.streak)+' подряд честен с собой.<br>Спорим, у тебя короче?</div>'
+    +'<div class="share-url">DZEN · ОГОНЬ СЕРИИ</div>'
+    +'</div>'
+    +'<button class="btn btn-primary" id="share" style="margin-top:14px">Поделиться огнём</button>'
+    +'<p class="small" id="shared" style="text-align:center; margin-top:10px; min-height:1.2em"></p>'
+    +'</div>';
+  setScreen(html);
+  var tmr=$app.querySelector('#tmr');
+  timerId=setInterval(function(){
+    var ms=msToMidnight();
+    if(tmr) tmr.textContent=fmtHMS(ms);
+    if(ms<1500){ clearInterval(timerId); timerId=null; route(); }
+  },1000);
+  on('#share', doShare);
+}
+function renderTitles(){
+  var got=S.milestonesSeen;
+  var rows='';
+  for(var i=0;i<MILES.length;i++){
+    var m=MILES[i], has=got.indexOf(m.days)>=0;
+    rows+='<div class="lt'+(has?' got':'')+'"><b>'+m.days+'</b><span>«'+esc(m.title)+'»'+(has?' — получен':'')+'</span></div>';
+  }
+  return '<div style="margin-top:22px"><b style="font-size:.95rem">Титулы серии</b><div class="list-titles">'+rows+'</div></div>';
+}
+function renderCal(){
+  var now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  var months=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+  var first=new Date(y,m,1), off=(first.getDay()+6)%7, days=new Date(y,m+1,0).getDate();
+  var t=todayStr();
+  var cells='';
+  var dows=['пн','вт','ср','чт','пт','сб','вс'];
+  for(var i=0;i<7;i++) cells+='<div class="cal-dow">'+dows[i]+'</div>';
+  for(i=0;i<off;i++) cells+='<div></div>';
+  for(var d=1;d<=days;d++){
+    var k=y+'-'+pad(m+1)+'-'+pad(d);
+    var rec=S.history[k];
+    var cls='cal-day';
+    if(rec) cls+= rec.t==='freeze' ? ' frozen' : ' fire';
+    if(k===t) cls+=' today';
+    if(fromStr(k)>fromStr(t)) cls+=' future';
+    cells+='<div class="'+cls+'">'+d+(rec&&rec.t!=='freeze'?miniFlame():'')+'</div>';
+  }
+  return '<div class="card cal" style="margin-top:14px"><div class="cal-head"><span class="cal-month">'+months[m]+'</span><span class="small">'+monthFires(y,m)+' 🔥 за месяц</span></div><div class="cal-grid">'+cells+'</div></div>';
+}
+function monthFires(y,m){
+  var n=0;
+  for(var k in S.history){
+    if(S.history.hasOwnProperty(k) && S.history[k].t!=='freeze'){
+      var p=k.split('-');
+      if(+p[0]===y && +p[1]===m+1) n++;
+    }
+  }
+  return n;
+}
+function doShare(){
+  var text='Моя серия: '+S.streak+' 🔥\n'+last7Emoji()+'\n'+dayWord(S.streak)+' подряд честен с собой. Спорим, у тебя короче?\n— DZEN · огонь серии';
+  var note=$app.querySelector('#shared');
+  if(navigator.share){
+    navigator.share({text:text}).catch(function(){});
+  }else if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ if(note) note.textContent='Скопировано — кидай в чат.'; }).catch(function(){});
+  }else if(note){
+    note.textContent=text;
+  }
+  chime();
+}
+
+/* ═══════════ демо «машина времени» ═══════════ */
+function renderFoot(){
+  if(S.demo){
+    $foot.innerHTML='<span class="demo-badge">ДЕМО</span> <button class="demo-link" id="dreset">сбросить демо и начать по-настоящему</button>';
+    var b=document.getElementById('dreset');
+    if(b) b.addEventListener('click', function(){
+      try{ localStorage.removeItem(KEY); }catch(e){}
+      S=load(); route();
+    });
+  }else{
+    $foot.innerHTML='<button class="demo-link" id="dgo">показать, как будет через неделю · демо</button>';
+    var g=document.getElementById('dgo');
+    if(g) g.addEventListener('click', function(){
+      var t=new Date();
+      S={streak:7, best:7, history:{}, lastCheckin:todayStr(), freezeWeek:weekKey(t), milestonesSeen:[3,7], demo:true};
+      for(var i=6;i>=0;i--){
+        var k=dstr(addDays(t,-i));
+        if(i===3){ S.history[k]={t:'freeze'}; }
+        else{
+          var yes=['sleep','gym','phone'].slice(0, 2+(i%3));
+          var st=dayStats(yes);
+          S.history[k]={t:'fire', yes:yes, h:st.health, p:st.pain};
+        }
+      }
+      save(); route();
+    });
+  }
+}
+
+route();
+</script>
+</body>
+</html>

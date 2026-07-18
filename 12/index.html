@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>DZEN — твой внутренний</title>
+<style>
+  :root{
+    --paper:#F4F1EA; --paper-zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F;
+    --line:#DFDACE; --card:#FBFAF6;
+    --lime:#A8C96B; --lime-d:#56732E; --lime-l:#ECF0DD;
+    --terra:#C0563E; --terra-d:#8A3A28; --terra-l:#F4E3DD;
+    --mango:#C2791B; --grape:#7A5C93;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --spring:cubic-bezier(.34,1.42,.5,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;
+    min-height:100svh; transition:background .8s var(--ease);
+  }
+  body.zen{background:var(--paper-zen)}
+  .wrap{max-width:560px;margin:0 auto;padding:18px 22px 30px;min-height:100svh;display:flex;flex-direction:column}
+  header{display:flex;justify-content:flex-end;padding-bottom:4px}
+  .brand{font-size:12px;letter-spacing:.22em;color:var(--muted);font-weight:600}
+  main{flex:1;display:flex;flex-direction:column}
+  .screen{display:none;flex-direction:column;gap:18px;flex:1;padding-top:8px}
+  .screen.active{display:flex;animation:fadeUp .55s var(--ease) both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(30px,8.4vw,42px);line-height:1.06;letter-spacing:-.02em;font-weight:700}
+  h2{font-size:clamp(22px,6vw,28px);line-height:1.15;letter-spacing:-.01em;font-weight:700}
+  .sub{color:var(--muted);font-size:16px;line-height:1.5}
+  .hint{color:var(--muted);font-size:13px;text-align:center}
+  .caption{color:var(--muted);font-size:14px;font-style:italic;line-height:1.45}
+
+  .btn{
+    display:block;width:100%;border:none;cursor:pointer;
+    padding:17px 20px;border-radius:24px;font-size:17px;font-weight:600;
+    font-family:inherit;color:var(--ink);
+    transition:transform .25s var(--spring), box-shadow .25s var(--ease), opacity .2s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--ink);color:var(--card)}
+  .btn.lime{background:var(--lime);color:var(--ink)}
+  .btn.ghost{background:var(--card);border:1.5px solid var(--line)}
+  .btn:disabled{opacity:.45;pointer-events:none}
+  .btnrow{display:flex;flex-direction:column;gap:10px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:22px}
+  .pop{animation:pop .6s var(--spring) both}
+  @keyframes pop{0%{opacity:0;transform:scale(.75) translateY(10px)}100%{opacity:1;transform:none}}
+
+  /* pet */
+  .petbox{display:flex;justify-content:center;align-items:flex-end;min-height:210px}
+  .petbox svg{width:min(64vw,250px);height:auto;display:block}
+  .petbox.small{min-height:150px}
+  .petbox.small svg{width:min(40vw,150px)}
+  .ln{fill:none;stroke:var(--ink);stroke-width:4;stroke-linecap:round}
+  .breath{animation:breath 3.6s ease-in-out infinite;transform-origin:0 0}
+  @keyframes breath{50%{transform:translateY(-3px)}}
+  .petwrap{position:relative}
+  .petwrap.bounce svg .breath{animation:bounce .7s var(--spring)}
+  @keyframes bounce{0%{transform:translateY(0)}35%{transform:translateY(-16px)}70%{transform:translateY(2px)}100%{transform:translateY(0)}}
+  .chip-float{
+    position:absolute;top:8px;right:8%;background:var(--lime);color:var(--ink);
+    font-weight:700;font-size:15px;border-radius:16px;padding:6px 12px;
+    animation:floatUp 1.1s var(--ease) forwards;pointer-events:none;
+  }
+  @keyframes floatUp{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
+  .sparkle{animation:tw 1.6s ease-in-out infinite}
+  .sparkle:nth-child(2){animation-delay:.4s}
+  .sparkle:nth-child(3){animation-delay:.9s}
+  @keyframes tw{0%,100%{opacity:.15}50%{opacity:1}}
+
+  /* quiz */
+  .progress{display:flex;align-items:center;gap:12px}
+  .progress .bar{flex:1;height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+  .progress .bar i{display:block;height:100%;background:var(--lime);border-radius:3px;width:0;transition:width .5s var(--ease)}
+  .progress span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .react{min-height:22px;text-align:center;font-size:15px;color:var(--muted);transition:opacity .3s}
+  .teaser{
+    text-align:center;font-size:14px;color:var(--muted);
+    filter:blur(0);border:1px dashed var(--line);border-radius:18px;padding:10px 14px;
+  }
+  .teaser b{filter:blur(6px);color:var(--lime-d)}
+
+  /* result cascade */
+  .bignum{font-size:clamp(64px,22vw,104px);font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--lime-d);font-variant-numeric:tabular-nums}
+  .badge-title{font-size:clamp(24px,7vw,30px);font-weight:800;letter-spacing:-.01em}
+  .dots::after{content:'';animation:dots 1.2s steps(4) infinite}
+  @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+
+  /* share card */
+  .sharecard{
+    background:var(--card);border:1px solid var(--line);border-radius:28px;
+    padding:24px 22px 18px;text-align:center;position:relative;overflow:hidden;
+  }
+  .sharecard .stagechip{
+    display:inline-block;background:var(--lime-l);color:var(--lime-d);
+    font-weight:700;font-size:13px;letter-spacing:.06em;border-radius:14px;padding:6px 14px;
+  }
+  .sharecard h3{font-size:clamp(22px,6.4vw,27px);letter-spacing:-.01em;margin-top:10px}
+  .sharecard .meta{color:var(--muted);font-size:14px;margin-top:6px}
+  .sharecard .foot{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;letter-spacing:.18em;color:var(--muted)}
+  .dotsrow{display:flex;justify-content:center;gap:7px;margin-top:14px}
+  .dotsrow i{width:11px;height:11px;border-radius:50%;background:var(--line)}
+  .dotsrow i.on{background:var(--lime)}
+  .dotsrow i.today{outline:2px solid var(--lime-d);outline-offset:2px}
+
+  /* roadmap */
+  .roadmap{display:flex;gap:8px}
+  .roadmap .st{
+    flex:1;text-align:center;border:1px solid var(--line);border-radius:18px;
+    padding:12px 4px 10px;background:var(--card);
+  }
+  .roadmap .st b{display:block;font-size:13px;font-weight:700}
+  .roadmap .st span{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+  .roadmap .st.done{background:var(--lime-l);border-color:var(--lime)}
+  .roadmap .st.now{background:var(--lime);border-color:var(--lime-d)}
+  .roadmap .st .ico{font-size:16px;line-height:1;margin-bottom:4px}
+
+  .timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+  .statrow{display:flex;gap:10px}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px;text-align:center}
+  .stat b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .stat span{font-size:12px;color:var(--muted)}
+  .stat.lime{background:var(--lime-l);border-color:var(--lime)}
+
+  .demobadge{
+    display:none;text-align:center;font-size:12px;color:var(--grape);
+    border:1px dashed var(--grape);border-radius:14px;padding:6px 10px;
+  }
+  body.demo .demobadge{display:block}
+
+  footer{padding-top:26px;display:flex;justify-content:center;gap:18px;flex-wrap:wrap}
+  .linkbtn{
+    background:none;border:none;cursor:pointer;font-family:inherit;
+    font-size:12px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;
+  }
+  .center{text-align:center}
+  .mt-auto{margin-top:auto}
+  .gap6{display:flex;flex-direction:column;gap:6px}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><span class="brand">DZEN</span></header>
+  <main>
+
+    <!-- ПЕРВЫЙ ВИЗИТ -->
+    <section class="screen" id="s-intro">
+      <div class="petbox petwrap" id="pet-intro"></div>
+      <h1>Внутри тебя<br>кто-то живёт.</h1>
+      <p class="sub">Это твой внутренний ты. Сегодня он появился — размером с росток.
+      Он растёт от твоих ответов: пять «да / нет» про вчера, десять секунд в день.</p>
+      <div class="btnrow mt-auto">
+        <button class="btn primary" id="btn-start">Покормить ответами</button>
+        <p class="hint">меньше минуты · без регистрации</p>
+      </div>
+    </section>
+
+    <!-- ВОЗВРАЩЕНИЕ (пропуск/новый день) -->
+    <section class="screen" id="s-back">
+      <div class="petbox petwrap" id="pet-back"></div>
+      <div class="card center pop">
+        <p id="back-story" style="font-size:17px;line-height:1.5"></p>
+        <p class="caption" id="back-note" style="margin-top:8px"></p>
+      </div>
+      <div class="btnrow mt-auto">
+        <button class="btn primary" id="btn-back-feed">Я здесь. Покормить</button>
+      </div>
+    </section>
+
+    <!-- ЗАМЕР -->
+    <section class="screen" id="s-quiz">
+      <div class="progress"><div class="bar"><i id="qbar"></i></div><span id="qnum"></span></div>
+      <div class="petbox small petwrap" id="pet-quiz"></div>
+      <p class="react" id="q-react">&nbsp;</p>
+      <div class="card" id="q-card">
+        <h2 id="q-title"></h2>
+        <p class="caption" id="q-sub" style="margin-top:8px"></p>
+      </div>
+      <div class="btnrow">
+        <button class="btn lime" id="btn-yes">Да</button>
+        <button class="btn ghost" id="btn-no">Нет</button>
+      </div>
+      <div class="teaser" id="q-teaser" hidden>его энергия уже считается… <b>+00</b></div>
+    </section>
+
+    <!-- РЕЗУЛЬТАТ: КАСКАД -->
+    <section class="screen" id="s-result">
+      <div id="cascade" style="display:flex;flex-direction:column;gap:14px"></div>
+      <div class="btnrow mt-auto" id="result-next" hidden>
+        <button class="btn primary" id="btn-to-final">Посмотреть на него</button>
+      </div>
+    </section>
+
+    <!-- ФИНАЛ ДНЯ: КАРТОЧКА + ЗАВТРА -->
+    <section class="screen" id="s-final">
+      <div class="demobadge">демо-режим: подставлена история за неделю</div>
+      <div class="sharecard" id="final-card"></div>
+      <div class="btnrow">
+        <button class="btn lime" id="btn-share">Поделиться им</button>
+        <p class="hint">или просто скриншот — он сегодня хорошо получился</p>
+      </div>
+      <div class="card gap6">
+        <h2 style="font-size:20px">Он ждёт тебя утром.</h2>
+        <p class="sub" id="final-next" style="font-size:15px"></p>
+        <p class="caption">Завтра он расскажет, что делал ночью.</p>
+      </div>
+      <div class="roadmap" id="final-roadmap"></div>
+    </section>
+
+    <!-- СЕГОДНЯ УЖЕ БЫЛ -->
+    <section class="screen" id="s-today">
+      <div class="demobadge">демо-режим: подставлена история за неделю</div>
+      <div class="petbox petwrap" id="pet-today"></div>
+      <h2 class="center" id="today-title">Сегодня ты его уже покормил.</h2>
+      <p class="sub center" id="today-line"></p>
+      <div class="statrow">
+        <div class="stat lime"><b id="today-energy">+0</b><span>энергии сегодня</span></div>
+        <div class="stat"><b id="today-streak">0</b><span id="today-streak-w">дней подряд</span></div>
+      </div>
+      <div class="dotsrow" id="today-dots"></div>
+      <div class="card center gap6">
+        <p class="sub" style="font-size:15px">Новый замер — после полуночи.</p>
+        <p class="timer" id="today-timer" style="font-size:26px">--:--:--</p>
+        <p class="caption" id="today-next"></p>
+      </div>
+      <div class="btnrow">
+        <button class="btn ghost" id="btn-share2">Поделиться им</button>
+      </div>
+    </section>
+
+  </main>
+  <footer>
+    <button class="linkbtn" id="btn-demo">демо: показать, как будет через неделю</button>
+    <button class="linkbtn" id="btn-reset" hidden>сбросить всё</button>
+  </footer>
+</div>
+
+<script>
+'use strict';
+/* ---------- данные ---------- */
+var KEY='dzen_pet_v12';
+var HABITS=[
+  {id:'sleep', q:'Вчера лёг до 23:00?',      sub:'вместо второго сезона, который сам себя не досмотрит', health:18},
+  {id:'sweets',q:'Не взял сладкое к чаю?',   sub:'вместо печенья, которое так грустно на тебя смотрит',  health:12},
+  {id:'gym',   q:'Сходил в зал через лень?', sub:'вместо дивана, который считал тебя своим',             health:23},
+  {id:'phone', q:'Не залип в телефоне?',     sub:'вместо ленты, в которую зашёл на минутку ещё час назад',health:10},
+  {id:'wb',    q:'Не купил из вайлбериса?',  sub:'вместо корзины, где уже лежала твоя новая жизнь',      health:8}
+];
+var REACT_YES={
+  sleep:'Выспался. Он аж подпрыгнул.',
+  sweets:'Печенье пережило вечер. Он горд.',
+  gym:'Диван остался один. Он в восторге.',
+  phone:'Лента подождёт. Он засиял.',
+  wb:'Корзина закрыта. Он выдохнул.'
+};
+var REACT_NO={
+  sleep:'Второй сезон был хорош. Он не осуждает.',
+  sweets:'Печенье победило. Бывает.',
+  gym:'Диван был убедителен. Он понимает.',
+  phone:'Лента затянула. С кем не бывало.',
+  wb:'Корзина оказалась сильнее. Он по-доброму молчит.'
+};
+var BADGES=[
+  {t:'Свободный дух',      l:'Пока ты просто живёшь. Ни пользы, ни боли.'},
+  {t:'Тихий герой',        l:'Один подвиг. Здоровье кивнуло, диван обиделся.'},
+  {t:'Осторожный праведник',l:'Два подвига. Оплачено силой воли, сдачи не будет.'},
+  {t:'Почти святой',       l:'Три подвига за день. Ты почти святой, только злой и голодный.'},
+  {t:'Железный внутри',    l:'Четыре из пяти. Нимб уже светится, терпение уже мигает.'},
+  {t:'Идеальный человек',  l:'Пять из пяти. Идеальный — и абсолютно вымотанный.'}
+];
+var PCT=[
+  'Ты страдаешь меньше, чем 91% прошедших.',
+  'Ты страдаешь меньше, чем 68% прошедших.',
+  'Ровно середина: 52% страдают сильнее тебя.',
+  'Ты страдаешь ради здоровья сильнее, чем 64% прошедших.',
+  'Ты страдаешь ради здоровья сильнее, чем 81% прошедших.',
+  'Ты страдаешь ради здоровья сильнее, чем 94% прошедших.'
+];
+var BARNUM='Ты срываешься не от слабости — а когда день выжал досуха. Он это знает и не осуждает.';
+var STAGES=[
+  {n:1, name:'Росток',    day:1,  ico:'·'},
+  {n:2, name:'Подросток', day:3,  ico:'··'},
+  {n:3, name:'Уверенный', day:7,  ico:'···'},
+  {n:4, name:'Цветущий',  day:14, ico:'✿'}
+];
+var STORY_1=[
+  'Пока тебя не было, я спал в обнимку с банкой.',
+  'Я гулял по подоконнику. Два раза.',
+  'Я считал пузырьки в банке. Сбился на сорок втором.'
+];
+var STORY_23=[
+  'Тебя не было {d}. Я немного скучал — банка составила компанию.',
+  '{d} тишины. Я не обижаюсь. Просто рад, что ты здесь.'
+];
+var STORY_4=[
+  'Я успел забыть, как звучат твои «да». Но ты пришёл — и я снова свечусь.'
+];
+
+/* ---------- чистая логика ---------- */
+function pad2(n){return (n<10?'0':'')+n;}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function parseD(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2],12,0,0);}
+function shiftDate(s,delta){var d=parseD(s);d.setDate(d.getDate()+delta);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function diffDays(a,b){return Math.round((parseD(b)-parseD(a))/86400000);}
+function stageFor(care){if(care>=14)return 4;if(care>=7)return 3;if(care>=3)return 2;return 1;}
+function stageName(st){return STAGES[st-1].name;}
+function calcStreak(days,ref){
+  var set={},i;for(i=0;i<days.length;i++)set[days[i].d]=1;
+  var n=0,t=ref;
+  while(set[t]){n++;t=shiftDate(t,-1);}
+  return n;
+}
+function energyOf(yes){
+  var e=0,i;for(i=0;i<HABITS.length;i++){if(yes.indexOf(HABITS[i].id)>=0)e+=HABITS[i].health;}
+  return e;
+}
+function ruDays(n){
+  var a=n%10,b=n%100;
+  if(a===1&&b!==11)return n+' день';
+  if(a>=2&&a<=4&&(b<10||b>=20))return n+' дня';
+  return n+' дней';
+}
+function nextStageInfo(care){
+  var st=stageFor(care),i;
+  for(i=0;i<STAGES.length;i++){
+    if(STAGES[i].n===st+1)return {name:STAGES[i].name, left:STAGES[i].day-care};
+  }
+  return null;
+}
+function moodByCount(c){return c>=3?'joy':(c>=1?'neutral':'neutral');}
+
+/* ---------- состояние ---------- */
+var state={days:[],demo:false};
+function load(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(raw){var s=JSON.parse(raw);if(s&&s.days)state=s;}
+  }catch(e){}
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+}
+
+/* ---------- SVG питомца ---------- */
+var _svgN=0;
+function petSVG(stage,mood,opts){
+  opts=opts||{};
+  var uid='p'+(_svgN++);
+  var scales=[0.55,0.72,0.88,1];
+  var s=scales[(stage||1)-1]||1;
+  var sad=(mood==='sad');
+  var eyes,mouth,cheeks='';
+  if(mood==='peak'){
+    eyes='<path d="M-26,-72 Q-19,-81 -12,-72" class="ln"/><path d="M12,-72 Q19,-81 26,-72" class="ln"/>';
+    mouth='<path d="M-13,-54 Q0,-37 13,-54" class="ln"/>';
+    cheeks='<circle cx="-33" cy="-58" r="7" fill="#C0563E" opacity=".16"/><circle cx="33" cy="-58" r="7" fill="#C0563E" opacity=".16"/>';
+  }else if(mood==='joy'){
+    eyes='<circle cx="-19" cy="-74" r="6" fill="#2B2A26"/><circle cx="19" cy="-74" r="6" fill="#2B2A26"/><circle cx="-17" cy="-76" r="2" fill="#FBFAF6"/><circle cx="21" cy="-76" r="2" fill="#FBFAF6"/>';
+    mouth='<path d="M-12,-53 Q0,-40 12,-53" class="ln"/>';
+    cheeks='<circle cx="-33" cy="-58" r="7" fill="#C0563E" opacity=".14"/><circle cx="33" cy="-58" r="7" fill="#C0563E" opacity=".14"/>';
+  }else if(mood==='sad'){
+    eyes='<circle cx="-19" cy="-71" r="5" fill="#2B2A26"/><circle cx="19" cy="-71" r="5" fill="#2B2A26"/>'
+        +'<path d="M-27,-81 Q-19,-85 -11,-82" class="ln"/><path d="M11,-82 Q19,-85 27,-81" class="ln"/>';
+    mouth='<path d="M-10,-47 Q0,-55 10,-47" class="ln"/>';
+  }else if(mood==='new'){
+    eyes='<circle cx="-19" cy="-74" r="6.5" fill="#2B2A26"/><circle cx="19" cy="-74" r="6.5" fill="#2B2A26"/><circle cx="-17" cy="-76" r="2.2" fill="#FBFAF6"/><circle cx="21" cy="-76" r="2.2" fill="#FBFAF6"/>';
+    mouth='<circle cx="0" cy="-50" r="4.5" fill="none" stroke="#2B2A26" stroke-width="3.5"/>';
+  }else{
+    eyes='<circle cx="-19" cy="-73" r="5.5" fill="#2B2A26"/><circle cx="19" cy="-73" r="5.5" fill="#2B2A26"/>';
+    mouth='<path d="M-8,-50 Q0,-45 8,-50" class="ln"/>';
+  }
+  var stem='<path d="M0,-112 Q1,-120 0,-127" fill="none" stroke="#56732E" stroke-width="4" stroke-linecap="round"/>';
+  var leafL='<path d="M0,-127 C-7,-141 -22,-147 -33,-142 C-29,-129 -14,-121 0,-127 Z" fill="#56732E"/>';
+  var leafR='<path d="M0,-127 C7,-141 22,-147 33,-142 C29,-129 14,-121 0,-127 Z" fill="#56732E"/>';
+  var bud='<circle cx="0" cy="-132" r="5.5" fill="#A8C96B" stroke="#56732E" stroke-width="2.5"/>';
+  var flower='<g transform="translate(0,-136)">'
+    +[0,72,144,216,288].map(function(a){return '<ellipse cx="0" cy="0" rx="4.5" ry="7.5" fill="#FBFAF6" stroke="#DFDACE" stroke-width="1" transform="rotate('+a+') translate(0,-8)"/>';}).join('')
+    +'<circle cx="0" cy="0" r="4.5" fill="#C2791B"/></g>';
+  var crown=stem+leafL;
+  if(stage>=2)crown+=leafR;
+  if(stage===3)crown+=bud;
+  if(stage>=4)crown+=flower;
+  crown='<g transform="rotate('+(sad?10:0)+' 0 -112)">'+crown+'</g>';
+
+  var glow=opts.glow
+    ? '<circle cx="110" cy="118" r="96" fill="url(#glow_'+uid+')"/>'
+      +'<g fill="#A8C96B"><circle class="sparkle" cx="42" cy="70" r="4"/><circle class="sparkle" cx="182" cy="96" r="3.4"/><circle class="sparkle" cx="160" cy="42" r="3"/></g>'
+    : '';
+  var can='';
+  if(opts.can){
+    can='<g transform="translate(163,196) rotate(-16)">'
+      +'<rect x="-15" y="-46" width="30" height="46" rx="8" fill="url(#can_'+uid+')"/>'
+      +'<rect x="-15" y="-46" width="30" height="7" rx="3.5" fill="#DFDACE"/>'
+      +'<text transform="rotate(90)" x="-19" y="-1" text-anchor="middle" font-size="9.5" letter-spacing="2.6" font-weight="700" fill="#FBFAF6" font-family="-apple-system,system-ui,sans-serif">DZEN</text>'
+      +'</g>';
+  }else if(opts.toy){
+    can='<g transform="translate(168,220) rotate(78)" opacity=".92">'
+      +'<rect x="-11" y="-34" width="22" height="34" rx="6" fill="url(#can_'+uid+')"/>'
+      +'<rect x="-11" y="-34" width="22" height="5.5" rx="2.7" fill="#DFDACE"/>'
+      +'<text transform="rotate(90)" x="-14" y="-0.5" text-anchor="middle" font-size="7" letter-spacing="2" font-weight="700" fill="#FBFAF6" font-family="-apple-system,system-ui,sans-serif">DZEN</text>'
+      +'</g>';
+  }
+  return '<svg viewBox="0 0 220 240" role="img" aria-label="твой внутренний, стадия «'+stageName(stage)+'»">'
+    +'<defs>'
+    +'<linearGradient id="can_'+uid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A8C96B"/><stop offset="1" stop-color="#56732E"/></linearGradient>'
+    +'<radialGradient id="glow_'+uid+'"><stop offset="0" stop-color="#ECF0DD"/><stop offset=".65" stop-color="#ECF0DD" stop-opacity=".55"/><stop offset="1" stop-color="#ECF0DD" stop-opacity="0"/></radialGradient>'
+    +'</defs>'
+    +glow
+    +'<ellipse cx="110" cy="229" rx="'+Math.round(62*s)+'" ry="7" fill="rgba(43,42,38,.08)"/>'
+    +can
+    +'<g transform="translate(110,226)"><g class="breath"><g transform="scale('+s+')">'
+    +'<path d="M0,0 C-46,0 -60,-26 -58,-58 C-56,-92 -32,-114 0,-114 C32,-114 56,-92 58,-58 C60,-26 46,0 0,0 Z" fill="#A8C96B"/>'
+    +'<ellipse cx="0" cy="-36" rx="30" ry="24" fill="#BBD489" opacity=".5"/>'
+    +crown+cheeks+eyes+mouth
+    +'</g></g></g>'
+    +'</svg>';
+}
+
+/* ---------- звук (WebAudio, нежно) ---------- */
+var AC=null;
+function ac(){
+  try{
+    if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==='suspended')AC.resume();
+    return AC;
+  }catch(e){return null;}
+}
+function tone(f1,f2,dur,gain,type){
+  var c=ac();if(!c)return;
+  try{
+    var o=c.createOscillator(),g=c.createGain(),t=c.currentTime;
+    o.type=type||'sine';
+    o.frequency.setValueAtTime(f1,t);
+    o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(gain||0.04,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g);g.connect(c.destination);
+    o.start(t);o.stop(t+dur+0.02);
+  }catch(e){}
+}
+function squeakYes(){tone(620,980,0.14,0.045);}
+function squeakNo(){tone(520,400,0.16,0.03);}
+function chime(){tone(660,660,0.18,0.035);setTimeout(function(){tone(880,880,0.26,0.035);},130);}
+function pshh(){
+  var c=ac();if(!c)return;
+  try{
+    var dur=0.5,rate=c.sampleRate,buf=c.createBuffer(1,rate*dur,rate),d=buf.getChannelData(0),i;
+    for(i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.6);
+    var src=c.createBufferSource();src.buffer=buf;
+    var f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=5200;f.Q.value=0.8;
+    var g=c.createGain();g.gain.value=0.05;
+    src.connect(f);f.connect(g);g.connect(c.destination);
+    src.start();
+  }catch(e){}
+}
+function buzz(ms){try{if(navigator.vibrate)navigator.vibrate(ms||12);}catch(e){}}
+
+/* ---------- DOM-помощники ---------- */
+function $(id){return document.getElementById(id);}
+function show(id){
+  var ss=document.querySelectorAll('.screen'),i;
+  for(i=0;i<ss.length;i++)ss[i].classList.remove('active');
+  $(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function setPet(boxId,stage,mood,opts){
+  var el=$(boxId);if(!el)return;
+  el.innerHTML=petSVG(stage,mood,opts);
+}
+function petBounce(boxId){
+  var el=$(boxId);if(!el)return;
+  el.classList.remove('bounce');
+  void el.offsetWidth;
+  el.classList.add('bounce');
+}
+function floatChip(boxId,text){
+  var el=$(boxId);if(!el)return;
+  var c=document.createElement('span');
+  c.className='chip-float';c.textContent=text;
+  el.appendChild(c);
+  setTimeout(function(){if(c.parentNode)c.parentNode.removeChild(c);},1200);
+}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function countUp(el,to,dur){
+  var start=null;
+  function step(ts){
+    if(start===null)start=ts;
+    var p=Math.min(1,(ts-start)/dur);
+    var eased=1-Math.pow(1-p,3);
+    el.textContent='+'+Math.round(to*eased);
+    if(p<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function dotsRow(el,days){
+  var t=todayStr(),html='',i;
+  var set={};for(i=0;i<days.length;i++)set[days[i].d]=1;
+  for(i=13;i>=0;i--){
+    var d=shiftDate(t,-i);
+    html+='<i class="'+(set[d]?'on':'')+(i===0?' today':'')+'"></i>';
+  }
+  el.innerHTML=html;
+}
+function roadmapHTML(care){
+  var st=stageFor(care),html='',i;
+  for(i=0;i<STAGES.length;i++){
+    var s=STAGES[i],cls='';
+    if(s.n<st)cls='done';else if(s.n===st)cls='now';
+    html+='<div class="st '+cls+'"><div class="ico">'+(s.n<=st?'●':'○')+'</div><b>'+s.name+'</b><span>день '+s.day+'</span></div>';
+  }
+  return html;
+}
+
+/* ---------- замер ---------- */
+var qIdx=0,qYes=[],qLock=false;
+function quizStage(){return stageFor(Math.max(state.days.length,0)||1);}
+function startQuiz(){
+  qIdx=0;qYes=[];qLock=false;
+  setPet('pet-quiz',quizStage(),'new');
+  $('q-teaser').hidden=true;
+  renderQuestion();
+  show('s-quiz');
+}
+function renderQuestion(){
+  var h=HABITS[qIdx];
+  $('q-title').textContent=h.q;
+  $('q-sub').textContent='— '+h.sub;
+  $('qnum').textContent=(qIdx+1)+' из '+HABITS.length;
+  $('qbar').style.width=Math.round(qIdx/HABITS.length*100)+'%';
+  $('q-react').innerHTML='&nbsp;';
+  var card=$('q-card');
+  card.classList.remove('pop');void card.offsetWidth;card.classList.add('pop');
+  $('btn-yes').disabled=false;$('btn-no').disabled=false;
+  qLock=false;
+}
+function answer(v){
+  if(qLock)return;qLock=true;
+  $('btn-yes').disabled=true;$('btn-no').disabled=true;
+  buzz(12);
+  var h=HABITS[qIdx];
+  if(v){
+    qYes.push(h.id);
+    setPet('pet-quiz',quizStage(),'joy');
+    petBounce('pet-quiz');
+    floatChip('pet-quiz','+'+h.health);
+    squeakYes();
+    $('q-react').textContent=REACT_YES[h.id];
+  }else{
+    setPet('pet-quiz',quizStage(),'neutral');
+    squeakNo();
+    $('q-react').textContent=REACT_NO[h.id];
+  }
+  $('qbar').style.width=Math.round((qIdx+1)/HABITS.length*100)+'%';
+  if(qIdx===2){
+    var t=$('q-teaser');
+    t.hidden=false;
+    t.querySelector('b').textContent='+'+energyOf(qYes);
+  }
+  setTimeout(function(){
+    qIdx++;
+    if(qIdx<HABITS.length){renderQuestion();}
+    else finishQuiz();
+  },1050);
+}
+function finishQuiz(){
+  var t=todayStr();
+  var prevCare=state.days.length;
+  state.days.push({d:t,yes:qYes.slice(),e:energyOf(qYes)});
+  state.days.sort(function(a,b){return a.d<b.d?-1:1;});
+  save();
+  runCascade(prevCare);
+}
+
+/* ---------- каскад результата ---------- */
+function card(html){
+  var el=document.createElement('div');
+  el.className='card pop';
+  el.innerHTML=html;
+  $('cascade').appendChild(el);
+  return el;
+}
+async function runCascade(prevCare){
+  var cas=$('cascade');cas.innerHTML='';
+  $('result-next').hidden=true;
+  show('s-result');
+  var e=energyOf(qYes),cnt=qYes.length;
+  var care=state.days.length;
+  var stUp=stageFor(care)>stageFor(Math.max(prevCare,1));
+
+  var c1=card('<p class="sub center dots">Считаем энергию заботы</p>');
+  await sleep(1400);
+  c1.innerHTML='<div class="center"><div class="bignum" id="casc-num">+0</div><p class="sub" style="margin-top:6px">энергии он получил от твоих ответов</p></div>';
+  countUp($('casc-num'),e,900);
+  buzz(24);chime();
+  await sleep(1300);
+
+  card('<div class="center"><p class="hint" style="margin-bottom:6px">твой вчерашний день</p><div class="badge-title">'+BADGES[cnt].t+'</div><p class="sub" style="margin-top:8px">'+BADGES[cnt].l+'</p></div>');
+  await sleep(1100);
+
+  card('<p class="sub center">'+PCT[cnt]+'</p>'+(cnt>=1?'<p class="caption center" style="margin-top:8px">'+BARNUM+'</p>':''));
+  await sleep(1100);
+
+  if(stUp){
+    var st=stageFor(care);
+    card('<div class="center"><div class="petbox small petwrap" id="pet-up"></div><div class="badge-title" style="color:var(--lime-d)">Он вырос.</div><p class="sub" style="margin-top:6px">Стадия «'+stageName(st)+'». Это заметно.</p></div>');
+    setPet('pet-up',st,'joy');
+    petBounce('pet-up');
+    chime();buzz(24);
+    await sleep(1400);
+  }
+
+  document.body.classList.add('zen');
+  card('<div class="center"><div class="petbox petwrap" id="pet-peak"></div>'
+    +'<p class="sub">На пике он всегда делает одно и то же —<br>открывает свою любимую игрушку.</p>'
+    +'<h2 style="margin-top:10px">DZEN. Польза, которую<br>не надо терпеть.</h2>'
+    +'<p class="caption" style="margin-top:8px">пребиотик-лимонад · 0 г сахара · ≈4 г клетчатки · без Е-шек</p></div>');
+  setPet('pet-peak',stageFor(care),'peak',{can:true,glow:true});
+  pshh();buzz(12);
+  await sleep(900);
+  $('result-next').hidden=false;
+}
+
+/* ---------- финал дня ---------- */
+function buildCard(){
+  var care=state.days.length;
+  var st=stageFor(care);
+  var last=state.days[state.days.length-1];
+  var streak=calcStreak(state.days,todayStr());
+  return '<div class="petbox petwrap" style="min-height:180px" id="card-pet"></div>'
+    +'<span class="stagechip">стадия · '+stageName(st).toUpperCase()+'</span>'
+    +'<h3>Мой внутренний — день '+care+'</h3>'
+    +'<p class="meta">энергия +'+last.e+' · серия: '+ruDays(streak)+'</p>'
+    +'<div class="dotsrow" id="card-dots"></div>'
+    +'<div class="foot">DZEN · ПОЛЬЗА, КОТОРУЮ НЕ НАДО ТЕРПЕТЬ</div>';
+}
+function renderFinal(){
+  $('final-card').innerHTML=buildCard();
+  setPet('card-pet',stageFor(state.days.length),'joy');
+  dotsRow($('card-dots'),state.days);
+  var ns=nextStageInfo(state.days.length);
+  $('final-next').textContent=ns
+    ? 'До стадии «'+ns.name+'» — '+ruDays(ns.left)+' заботы. Стадию не догнать за один раз: только по дню за днём.'
+    : 'Он дорос до цветущего. Теперь просто не теряйте друг друга.';
+  $('final-roadmap').innerHTML=roadmapHTML(state.days.length);
+  show('s-final');
+}
+
+/* ---------- сегодня уже был ---------- */
+var timerId=null;
+function msToMidnight(){
+  var n=new Date();
+  return new Date(n.getFullYear(),n.getMonth(),n.getDate()+1)-n;
+}
+function fmtT(ms){
+  var s=Math.max(0,Math.floor(ms/1000));
+  return pad2(Math.floor(s/3600))+':'+pad2(Math.floor(s%3600/60))+':'+pad2(s%60);
+}
+function renderToday(){
+  var care=state.days.length;
+  var last=state.days[state.days.length-1];
+  var streak=calcStreak(state.days,todayStr());
+  var cnt=last.yes.length;
+  setPet('pet-today',stageFor(care),moodByCount(cnt),{toy:true});
+  $('today-line').textContent=cnt>=3
+    ? 'Он сыт, доволен и играет с банкой.'
+    : (cnt>=1?'Он спокоен. Играет с банкой и никуда не спешит.':'Он не в обиде. Просто лежит рядом с банкой.');
+  $('today-energy').textContent='+'+last.e;
+  $('today-streak').textContent=streak;
+  $('today-streak-w').textContent=streak===1?'день заботы':'дней подряд';
+  dotsRow($('today-dots'),state.days);
+  var ns=nextStageInfo(care);
+  $('today-next').textContent=ns
+    ? 'Завтра: новый замер, +1 день роста. До стадии «'+ns.name+'» — '+ruDays(ns.left)+'.'
+    : 'Завтра: новый замер. Он цветёт — не бросай его.';
+  if(timerId)clearInterval(timerId);
+  function tick(){var el=$('today-timer');if(el)el.textContent=fmtT(msToMidnight());}
+  tick();timerId=setInterval(tick,1000);
+  show('s-today');
+}
+
+/* ---------- возвращение ---------- */
+function renderBack(gap){
+  var care=state.days.length;
+  var st=stageFor(care);
+  var story;
+  if(gap<=1)story=STORY_1[Math.floor(Math.random()*STORY_1.length)];
+  else if(gap<=3)story=STORY_23[Math.floor(Math.random()*STORY_23.length)].replace('{d}',ruDays(gap));
+  else story=STORY_4[0];
+  setPet('pet-back',st,gap>=2?'sad':'joy');
+  $('back-story').textContent='«'+story+'»';
+  var prevStreak=calcStreak(state.days,shiftDate(todayStr(),-1));
+  $('back-note').textContent=(gap>=2&&prevStreak===0)
+    ? 'Серия начнётся заново. Ему не важно — лишь бы ты рядом.'
+    : 'День '+(care+1)+'. Он ждал этого с утра.';
+  show('s-back');
+}
+
+/* ---------- шеринг ---------- */
+function shareGrid(){
+  var t=todayStr(),set={},i,g='';
+  for(i=0;i<state.days.length;i++)set[state.days[i].d]=1;
+  for(i=6;i>=0;i--)g+=set[shiftDate(t,-i)]?'\u{1F7E2}':'⚪️';
+  return g;
+}
+function doShare(){
+  buzz(12);
+  var care=state.days.length;
+  var st=stageFor(care);
+  var last=state.days[state.days.length-1];
+  var text='Мой внутренний — день '+care+'. Стадия «'+stageName(st)+'», энергия +'+last.e+'.\n'
+    +shareGrid()+'\n'
+    +'Спорим, твой ещё росток? DZEN · калькулятор страданий';
+  if(navigator.share){
+    navigator.share({text:text}).catch(function(){});
+  }else{
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text);
+      }
+      alert('Текст скопирован — вставь в чат:\n\n'+text);
+    }catch(e){alert(text);}
+  }
+}
+
+/* ---------- демо-машина времени ---------- */
+var DEMO_PLAN=[
+  ['sleep','gym'],['sleep','sweets','phone'],['gym','wb'],
+  ['sleep','gym','sweets','phone'],['gym','phone','wb'],
+  ['sleep','sweets','gym','phone'],['sleep','sweets','gym','phone','wb']
+];
+function demoFill(){
+  try{
+    if(!state.demo)localStorage.setItem(KEY+'_bak',JSON.stringify(state));
+  }catch(e){}
+  var t=todayStr(),days=[],i;
+  for(i=0;i<7;i++){
+    var yes=DEMO_PLAN[i];
+    days.push({d:shiftDate(t,-(6-i)),yes:yes.slice(),e:energyOf(yes)});
+  }
+  state={days:days,demo:true};
+  save();
+  document.body.classList.add('demo');
+  $('btn-demo').textContent='демо: вернуть как было';
+  renderToday();
+}
+function demoOff(){
+  var restored=null;
+  try{
+    var raw=localStorage.getItem(KEY+'_bak');
+    if(raw)restored=JSON.parse(raw);
+    localStorage.removeItem(KEY+'_bak');
+  }catch(e){}
+  state=restored&&restored.days?restored:{days:[],demo:false};
+  state.demo=false;
+  save();
+  document.body.classList.remove('demo');
+  $('btn-demo').textContent='демо: показать, как будет через неделю';
+  route();
+}
+function resetAll(){
+  try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_bak');}catch(e){}
+  state={days:[],demo:false};
+  document.body.classList.remove('demo','zen');
+  $('btn-demo').textContent='демо: показать, как будет через неделю';
+  route();
+}
+
+/* ---------- маршрутизация ---------- */
+function route(){
+  document.body.classList.remove('zen');
+  $('btn-reset').hidden=state.days.length===0;
+  if(state.demo){
+    document.body.classList.add('demo');
+    $('btn-demo').textContent='демо: вернуть как было';
+  }
+  if(state.days.length===0){
+    setPet('pet-intro',1,'new');
+    show('s-intro');
+    return;
+  }
+  var last=state.days[state.days.length-1].d;
+  var t=todayStr();
+  if(last===t){renderToday();return;}
+  renderBack(diffDays(last,t));
+}
+
+/* ---------- init ---------- */
+function init(){
+  load();
+  $('btn-start').addEventListener('click',function(){buzz(12);ac();startQuiz();});
+  $('btn-yes').addEventListener('click',function(){answer(true);});
+  $('btn-no').addEventListener('click',function(){answer(false);});
+  $('btn-to-final').addEventListener('click',function(){buzz(12);renderFinal();});
+  $('btn-share').addEventListener('click',doShare);
+  $('btn-share2').addEventListener('click',doShare);
+  $('btn-back-feed').addEventListener('click',function(){
+    buzz(12);ac();
+    setPet('pet-back',stageFor(state.days.length),'joy');
+    petBounce('pet-back');squeakYes();
+    setTimeout(startQuiz,650);
+  });
+  $('btn-demo').addEventListener('click',function(){
+    buzz(12);
+    if(state.demo)demoOff();else demoFill();
+    $('btn-reset').hidden=state.days.length===0;
+  });
+  $('btn-reset').addEventListener('click',resetAll);
+  route();
+}
+if(typeof document!=='undefined'&&document.getElementById&&document.getElementById('s-intro')){
+  init();
+}
+</script>
+</body>
+</html>

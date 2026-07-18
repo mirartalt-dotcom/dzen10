@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<title>DZEN — Два тапа</title>
+<style>
+  :root{
+    --paper:#F4F1EA; --zen:#EFF2E4; --ink:#2B2A26; --muted:#6E6A5F;
+    --line:#DFDACE; --card:#FBFAF6;
+    --lime:#A8C96B; --lime-d:#56732E; --lime-l:#ECF0DD;
+    --terra:#C0563E; --terra-d:#8A3A28; --terra-l:#F4E3DD;
+    --mango:#C2791B; --grape:#7A5C93;
+    --ease:cubic-bezier(.22,.61,.36,1);
+    --spring:cubic-bezier(.34,1.42,.5,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--paper);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,Roboto,sans-serif;
+    font-size:17px;line-height:1.45;min-height:100%}
+  .wrap{max-width:520px;margin:0 auto;padding:20px 20px 40px;min-height:100dvh;
+    display:flex;flex-direction:column}
+  header{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 18px}
+  .brand{font-size:13px;letter-spacing:.24em;color:var(--muted);font-weight:600}
+  .streak-chip{font-size:13px;color:var(--lime-d);background:var(--lime-l);
+    border:1px solid var(--lime);border-radius:999px;padding:4px 12px;font-weight:600;
+    opacity:0;transform:scale(.8);transition:all .5s var(--spring)}
+  .streak-chip.on{opacity:1;transform:scale(1)}
+  .demo-chip{font-size:11px;letter-spacing:.14em;color:var(--grape);border:1px dashed var(--grape);
+    border-radius:999px;padding:3px 10px;margin-left:8px;font-weight:600}
+
+  section{display:none;flex:1;flex-direction:column}
+  section.show{display:flex;animation:appear .55s var(--ease) both}
+  @keyframes appear{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  h1{font-size:34px;line-height:1.15;font-weight:700;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin-top:8px;font-size:16px}
+
+  /* ---- Тап 1: лица ---- */
+  .faces{display:flex;justify-content:space-between;gap:6px;margin:44px 0 8px}
+  .face{flex:1;background:none;border:none;cursor:pointer;border-radius:24px;padding:6px 2px 10px;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    transition:transform .35s var(--spring),background .3s var(--ease)}
+  .face svg{width:100%;max-width:64px;height:auto;display:block;
+    transition:transform .35s var(--spring)}
+  .face span{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+  .face:active{transform:scale(.92)}
+  .face.picked{background:var(--card)}
+  .face.picked svg{transform:scale(1.18)}
+  .face.dim{opacity:.35;transform:scale(.9)}
+
+  /* ---- Тап 2: привычки ---- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:32px 0 20px}
+  .tile{background:var(--card);border:1.5px solid var(--line);border-radius:22px;
+    padding:18px 14px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit;
+    display:flex;flex-direction:column;gap:8px;position:relative;
+    transition:all .35s var(--spring)}
+  .tile:active{transform:scale(.95)}
+  .tile svg{width:30px;height:30px}
+  .tile .t{font-size:15px;font-weight:600;line-height:1.25}
+  .tile .p{font-size:12px;color:var(--terra-d);font-weight:600}
+  .tile.sel{border-color:var(--terra);background:var(--terra-l)}
+  .tile.dzen .p{color:var(--lime-d)}
+  .tile.dzen.sel{border-color:var(--lime);background:var(--lime-l)}
+  .tile .check{position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;
+    border:1.5px solid var(--line);background:var(--paper);
+    display:flex;align-items:center;justify-content:center;transition:all .3s var(--spring)}
+  .tile.sel .check{background:var(--terra);border-color:var(--terra)}
+  .tile.dzen.sel .check{background:var(--lime-d);border-color:var(--lime-d)}
+  .tile .check svg{width:11px;height:11px;opacity:0;transform:scale(.4);transition:all .3s var(--spring)}
+  .tile.sel .check svg{opacity:1;transform:scale(1)}
+
+  .btn{display:block;width:100%;border:none;cursor:pointer;font:inherit;font-weight:700;
+    font-size:17px;padding:17px;border-radius:22px;background:var(--ink);color:var(--paper);
+    transition:transform .3s var(--spring),opacity .3s}
+  .btn:active{transform:scale(.97)}
+  .btn.lime{background:var(--lime-d);color:#fff}
+  .btn.ghost{background:transparent;color:var(--muted);border:1.5px solid var(--line);font-weight:600}
+  .none-link{background:none;border:none;font:inherit;color:var(--muted);cursor:pointer;
+    text-align:center;width:100%;padding:14px 0 4px;font-size:14px;text-decoration:underline;
+    text-decoration-color:var(--line);text-underline-offset:3px}
+
+  /* ---- Картина ---- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:26px;
+    padding:22px 20px;margin-bottom:14px}
+  .card h3{font-size:13px;letter-spacing:.14em;color:var(--muted);font-weight:600;
+    text-transform:uppercase;margin-bottom:14px}
+  .bignum{font-size:72px;font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--terra)}
+  .bignum.zenlike{color:var(--lime-d)}
+  .bigline{margin-top:10px;font-size:17px}
+  .today-banner{background:var(--zen);border:1px solid var(--line);border-radius:26px;
+    padding:18px 20px;margin-bottom:14px}
+  .today-banner b{font-weight:700}
+  .countdown{font-variant-numeric:tabular-nums;font-weight:700;color:var(--lime-d)}
+
+  .strip{display:flex;gap:6px;flex-wrap:wrap}
+  .sq{width:26px;height:26px;border-radius:8px;background:var(--paper);
+    border:1.5px dashed var(--line);position:relative;
+    animation:sqin .5s var(--spring) both}
+  .sq.f{border:none}
+  .sq.today{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--ink)}
+  .sq.tmrw{border:1.5px dashed var(--lime-d);background:var(--lime-l);animation:pulse 2.2s var(--ease) infinite}
+  @keyframes sqin{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  .strip-legend{display:flex;justify-content:space-between;margin-top:10px;
+    font-size:12px;color:var(--muted)}
+
+  .chart-tabs{display:flex;gap:8px;margin-bottom:14px}
+  .chart-tabs button{font:inherit;font-size:13px;font-weight:600;border-radius:999px;
+    padding:5px 14px;border:1.5px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+  .chart-tabs button.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  .chart-box{overflow:hidden}
+  .legend{display:flex;gap:18px;margin-top:10px;font-size:13px;color:var(--muted)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+
+  .finding{background:var(--card);border:1px solid var(--line);border-radius:22px;
+    padding:16px 18px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;
+    animation:appear .6s var(--ease) both}
+  .finding .fi{width:34px;height:34px;flex:none;border-radius:12px;background:var(--zen);
+    display:flex;align-items:center;justify-content:center}
+  .finding .fi svg{width:19px;height:19px}
+  .finding p{font-size:16px;line-height:1.4}
+  .finding.zen{background:var(--lime-l);border-color:var(--lime)}
+  .finding.zen .fi{background:#fff}
+  .teaser{border-style:dashed;color:var(--muted)}
+  .teaser p{color:var(--muted)}
+
+  /* шер-карточка */
+  .share-card{background:var(--zen);border:1px solid var(--line);border-radius:26px;
+    padding:24px 22px 18px;margin:6px 0 14px}
+  .share-card .sc-title{font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .share-card .sc-sub{font-size:14px;color:var(--muted);margin:2px 0 16px}
+  .share-card .strip{margin-bottom:16px}
+  .share-card .sc-find{font-size:16px;line-height:1.4;border-top:1px solid var(--line);padding-top:14px}
+  .sc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+  .sc-url{font-size:11px;color:var(--muted);letter-spacing:.04em}
+  .can{width:26px;height:44px;border-radius:8px 8px 9px 9px;position:relative;flex:none;
+    background:linear-gradient(160deg,var(--lime) 0%,#8FB44F 55%,var(--lime-d) 100%);
+    box-shadow:inset 0 2px 3px rgba(255,255,255,.45),inset 0 -3px 5px rgba(0,0,0,.18)}
+  .can::before{content:"";position:absolute;top:-3px;left:2px;right:2px;height:5px;
+    border-radius:999px;background:#D8D4C8;box-shadow:inset 0 -1px 2px rgba(0,0,0,.25)}
+  .can::after{content:"DZEN";position:absolute;top:52%;left:50%;
+    transform:translate(-50%,-50%) rotate(90deg);font-size:8.5px;font-weight:800;
+    letter-spacing:.22em;color:#fff}
+
+  .hook{margin:8px 0 18px;padding:18px 20px;border-radius:26px;background:var(--lime-l);
+    border:1px solid var(--lime)}
+  .hook b{color:var(--lime-d)}
+  footer{margin-top:auto;padding-top:26px;text-align:center}
+  .tm-btn{background:none;border:none;font:inherit;font-size:12px;color:var(--muted);
+    cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);
+    text-underline-offset:3px;padding:6px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,80px);
+    background:var(--ink);color:var(--paper);font-size:14px;font-weight:600;
+    padding:11px 20px;border-radius:999px;opacity:0;transition:all .45s var(--spring);
+    pointer-events:none;z-index:50}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}
+  .confetti i{position:absolute;width:9px;height:9px;border-radius:2px;
+    animation:conf 1s var(--ease) forwards}
+  @keyframes conf{from{opacity:1;transform:translate(0,0) rotate(0)}
+    to{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot))}}
+
+  .counting{font-size:17px;color:var(--muted);animation:pulse 1.1s var(--ease) infinite}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div style="display:flex;align-items:center">
+      <div class="brand">DZEN</div>
+      <span class="demo-chip" id="demoChip" hidden>ДЕМО</span>
+    </div>
+    <div class="streak-chip" id="streakChip"></div>
+  </header>
+
+  <!-- ТАП 1 -->
+  <section id="s-mood">
+    <h1>Как ты?</h1>
+    <p class="sub">Один тап. Честно.</p>
+    <div class="faces" id="faces"></div>
+  </section>
+
+  <!-- ТАП 2 -->
+  <section id="s-habits">
+    <h1>Чем вчера страдал ради&nbsp;здоровья?</h1>
+    <p class="sub">Отметь всё, что было. Второй тап — и свободен.</p>
+    <div class="grid" id="grid"></div>
+    <button class="btn" id="doneBtn">Готово</button>
+    <button class="none-link" id="noneBtn">Вчера просто жил. Ни пользы, ни боли</button>
+  </section>
+
+  <!-- КАРТИНА -->
+  <section id="s-picture">
+    <div id="pictureTop"></div>
+
+    <div class="card">
+      <h3>Настроение по дням</h3>
+      <div class="strip" id="moodStrip"></div>
+      <div class="strip-legend"><span id="stripFrom"></span><span>завтра</span></div>
+    </div>
+
+    <div class="card" id="chartCard">
+      <h3>Страдания и настроение</h3>
+      <div class="chart-tabs">
+        <button id="tab7" class="on">7 дней</button>
+        <button id="tab30">30 дней</button>
+      </div>
+      <div class="chart-box" id="chartBox"></div>
+      <div class="legend">
+        <span><i style="background:var(--terra)"></i>страдания</span>
+        <span><i style="background:var(--lime)"></i>настроение</span>
+      </div>
+    </div>
+
+    <div id="findings"></div>
+
+    <div class="share-card" id="shareCard">
+      <div class="sc-title">Моя неделя</div>
+      <div class="sc-sub">страдания ради здоровья, честный замер</div>
+      <div class="strip" id="shareStrip"></div>
+      <div class="sc-find" id="shareFind"></div>
+      <div class="sc-foot">
+        <div class="sc-url">DZEN · mirartalt-dotcom.github.io/dzen</div>
+        <div class="can" aria-hidden="true"></div>
+      </div>
+    </div>
+    <button class="btn lime" id="shareBtn">Поделиться неделей</button>
+
+    <div class="hook" id="hook"></div>
+  </section>
+
+  <footer>
+    <button class="tm-btn" id="tmBtn">машина времени: показать, как будет через неделю (демо)</button>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="confetti" id="confetti"></div>
+
+<script>
+"use strict";
+/* ============ ДАННЫЕ ============ */
+var HABITS = [
+  {id:"sleep",  t:"Лёг до 23:00",        s:"вместо второго сезона, который сам себя не досмотрит", pain:14, health:18},
+  {id:"sweets", t:"Без сладкого к чаю",  s:"вместо печенья, которое так грустно на тебя смотрит",  pain:17, health:12},
+  {id:"gym",    t:"Зал через лень",      s:"вместо дивана, который считал тебя своим",             pain:15, health:23},
+  {id:"phone",  t:"Не залипал в телефоне", s:"вместо ленты, в которую зашёл на минутку ещё час назад", pain:12, health:10},
+  {id:"wb",     t:"Не купил из вайлбериса", s:"вместо корзины, где уже лежала твоя новая жизнь",   pain:10, health:8}
+];
+var DZEN = {id:"dzen", t:"Выпил DZEN", s:"единственная кнопка, где платят удовольствием", pain:0, health:16};
+var MOODS = [
+  {v:1, label:"Выжат",    color:"#C0563E"},
+  {v:2, label:"Так себе", color:"#D08A5B"},
+  {v:3, label:"Норм",     color:"#CDC6B0"},
+  {v:4, label:"Хорошо",   color:"#C3D694"},
+  {v:5, label:"Сияю",     color:"#A8C96B"}
+];
+var MOOD_EMOJI = ["🟥","🟧","⬜","🟩","🟩"];
+var LS_KEY = "dzen_twotaps_v1";
+
+/* ============ SVG ============ */
+function faceSVG(v){
+  var eyes="", mouth="", extra="", fill="#FBFAF6";
+  if(v===1){ fill="#F4E3DD";
+    eyes='<path d="M20 27 l8 3" class="st"/><path d="M44 30 l8 -3" class="st"/>';
+    mouth='<path d="M22 45 q5 -4 10 0 q5 4 10 0" class="st"/>';
+    extra='<path d="M21 35 q3 2 6 0" class="st" opacity=".45"/><path d="M45 35 q3 2 6 0" class="st" opacity=".45"/>';
+  } else if(v===2){
+    eyes='<circle cx="25" cy="29" r="2.6" fill="#2B2A26"/><circle cx="47" cy="29" r="2.6" fill="#2B2A26"/>';
+    mouth='<path d="M25 46 q11 -6 22 0" class="st"/>';
+  } else if(v===3){
+    eyes='<circle cx="25" cy="29" r="2.6" fill="#2B2A26"/><circle cx="47" cy="29" r="2.6" fill="#2B2A26"/>';
+    mouth='<path d="M26 44 h20" class="st"/>';
+  } else if(v===4){
+    eyes='<circle cx="25" cy="28" r="2.6" fill="#2B2A26"/><circle cx="47" cy="28" r="2.6" fill="#2B2A26"/>';
+    mouth='<path d="M24 41 q12 10 24 0" class="st"/>';
+  } else { fill="#ECF0DD";
+    eyes='<path d="M20 29 q5 -6 10 0" class="st"/><path d="M42 29 q5 -6 10 0" class="st"/>';
+    mouth='<path d="M23 40 q13 12 26 0" class="st"/>';
+    extra='<path d="M36 3 v6 M62 12 l-4 4 M10 12 l4 4 M69 34 h-6 M3 34 h6" class="st" opacity=".7"/>';
+  }
+  return '<svg viewBox="0 0 72 72" fill="none" aria-hidden="true">'
+    +'<style>.st{stroke:#2B2A26;stroke-width:2.6;stroke-linecap:round;fill:none}</style>'
+    +'<circle cx="36" cy="36" r="26" fill="'+fill+'" stroke="#2B2A26" stroke-width="2.4"/>'
+    +eyes+mouth+extra+'</svg>';
+}
+var ICONS = {
+  sleep:'<path d="M20 15 A9.5 9.5 0 1 1 9.5 4.5 A7.5 7.5 0 0 0 20 15Z" class="st"/>',
+  sweets:'<circle cx="12" cy="12" r="8.5" class="st"/><circle cx="9" cy="10" r="1.1" fill="#2B2A26"/><circle cx="14.5" cy="9.5" r="1.1" fill="#2B2A26"/><circle cx="12" cy="14.5" r="1.1" fill="#2B2A26"/><circle cx="8.5" cy="15" r="1.1" fill="#2B2A26"/>',
+  gym:'<path d="M2 12 h3 M19 12 h3 M8 12 h8" class="st"/><rect x="4.6" y="7.5" width="3" height="9" rx="1.4" class="st"/><rect x="16.4" y="7.5" width="3" height="9" rx="1.4" class="st"/>',
+  phone:'<rect x="7" y="2.5" width="10" height="19" rx="2.6" class="st"/><path d="M10.5 18.2 h3" class="st"/>',
+  wb:'<path d="M5 8 h14 l-1.4 12 a2 2 0 0 1 -2 1.8 h-7.2 a2 2 0 0 1 -2 -1.8 Z" class="st"/><path d="M8.6 8 a3.4 3.4 0 0 1 6.8 0" class="st"/>',
+  dzen:'<rect x="7.5" y="4" width="9" height="17" rx="2.6" class="st"/><path d="M8.5 4 h7" class="st"/><path d="M10 11 h4 l-4 5 h4" class="st" stroke-width="1.7"/>',
+  spark:'<path d="M12 3 v4 M12 17 v4 M3 12 h4 M17 12 h4 M6 6 l2.6 2.6 M15.4 15.4 L18 18 M18 6 l-2.6 2.6 M8.6 15.4 L6 18" class="st"/>',
+  eye:'<path d="M2.5 12 q9.5 -9 19 0 q-9.5 9 -19 0Z" class="st"/><circle cx="12" cy="12" r="2.6" class="st"/>'
+};
+function iconSVG(id, stroke){
+  return '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><style>.st{stroke:'+(stroke||"#2B2A26")+';stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;fill:none}</style>'+ICONS[id]+'</svg>';
+}
+var CHECK = '<svg viewBox="0 0 12 12" fill="none"><path d="M2 6.2 L5 9 L10 3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+/* ============ ХРАНИЛИЩЕ ============ */
+function dateKey(d){
+  var y=d.getFullYear(), m=("0"+(d.getMonth()+1)).slice(-2), dd=("0"+d.getDate()).slice(-2);
+  return y+"-"+m+"-"+dd;
+}
+function keyOffset(off){ var d=new Date(); d.setDate(d.getDate()+off); return dateKey(d); }
+function load(){
+  try{ var raw=localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return {entries:{}};
+}
+function save(st){ try{ localStorage.setItem(LS_KEY, JSON.stringify(st)); }catch(e){} }
+
+var state = load();
+var demo = false;
+var demoEntries = null;
+
+function entries(){
+  if(demo){
+    var merged = {};
+    var k;
+    for(k in demoEntries) merged[k]=demoEntries[k];
+    for(k in state.entries) merged[k]=state.entries[k];
+    return merged;
+  }
+  return state.entries;
+}
+function sortedDays(){
+  var e=entries(); var keys=[]; for(var k in e) keys.push(k);
+  keys.sort();
+  return keys.map(function(k){ var v=e[k]; return {date:k, m:v.m, h:v.h||[], z:!!v.z}; });
+}
+function painOf(entry){
+  var sum=0;
+  entry.h.forEach(function(id){
+    var hb=null; for(var i=0;i<HABITS.length;i++) if(HABITS[i].id===id) hb=HABITS[i];
+    if(hb) sum+=hb.pain;
+  });
+  return sum;
+}
+function streak(){
+  var e=entries(); var n=0; var off=0;
+  if(!e[keyOffset(0)]) off=-1;
+  while(e[keyOffset(off-n)]) n++;
+  return n;
+}
+
+/* ============ НАХОДКИ ============ */
+function habitById(id){ for(var i=0;i<HABITS.length;i++) if(HABITS[i].id===id) return HABITS[i]; return null; }
+function avg(arr){ if(!arr.length) return 0; var s=0; arr.forEach(function(x){s+=x;}); return s/arr.length; }
+
+var FIND_TEXT = {
+  sweets:{pos:"В дни без сладкого твоё настроение почему-то выше. Подозрительно.",
+          neg:"Без сладкого настроение ниже. Печенье передаёт привет."},
+  gym:{pos:"В дни зала настроение выше. Диван подозревает измену.",
+       neg:"Зал был {n} раз{a} — настроение хуже. Мы всё видим."},
+  sleep:{pos:"Лёг до 23:00 — и настроение выше. Совпадение? Не думаем.",
+         neg:"Ранний сон, а настроение ниже. Второй сезон отомстил."},
+  phone:{pos:"Меньше ленты — выше настроение. Лента этого не признает.",
+         neg:"Без ленты настроение ниже. Лента уже пишет «мы скучали»."},
+  wb:{pos:"Корзина закрыта — настроение выше. Новая жизнь подождёт.",
+      neg:"Не купил — и грустишь. Корзина всё ещё всё помнит."}
+};
+function plural(n){ if(n%10===1 && n%100!==11) return ""; return "а"; }
+
+function computeFindings(){
+  var days = sortedDays();
+  var out = [];
+  if(days.length < 3){
+    return {teaser: 3-days.length, list: []};
+  }
+  // общая корреляция страдание/настроение
+  var pains=days.map(painOf), moods=days.map(function(d){return d.m;});
+  var mp=avg(pains), mm=avg(moods), num=0, dp=0, dm=0;
+  for(var i=0;i<days.length;i++){
+    num += (pains[i]-mp)*(moods[i]-mm);
+    dp += (pains[i]-mp)*(pains[i]-mp);
+    dm += (moods[i]-mm)*(moods[i]-mm);
+  }
+  var r = (dp>0 && dm>0) ? num/Math.sqrt(dp*dm) : 0;
+  if(r < -0.3 && Math.max.apply(null,pains) > 0){
+    out.push({icon:"eye", text:"Чем больше страдаешь ради здоровья, тем хуже настроение. Кто бы мог подумать."});
+  }
+  // по привычкам
+  HABITS.forEach(function(hb){
+    var withM=[], withoutM=[];
+    days.forEach(function(d){
+      if(d.h.indexOf(hb.id)>=0) withM.push(d.m); else withoutM.push(d.m);
+    });
+    if(withM.length<1 || withoutM.length<1) return;
+    var diff = avg(withM)-avg(withoutM);
+    if(Math.abs(diff) < 0.6) return;
+    var tpl = FIND_TEXT[hb.id][diff>0?"pos":"neg"];
+    tpl = tpl.replace("{n}", withM.length).replace("{a}", plural(withM.length));
+    out.push({icon:hb.id, text:tpl});
+  });
+  // DZEN-переворот
+  var dzenDays = days.filter(function(d){return d.z;});
+  var goodCombo = days.filter(function(d){return d.m>=4 && (d.h.length>0 || d.z);});
+  if(dzenDays.length){
+    var bestDzen = Math.max.apply(null, dzenDays.map(function(d){return d.m;}));
+    var comboAllDzen = goodCombo.length>0 && goodCombo.every(function(d){return d.z;});
+    if(comboAllDzen && goodCombo.length===1){
+      out.push({icon:"dzen", zen:true, text:"Единственный день, когда польза и настроение совпали — день с DZEN. Польза, которую не надо терпеть."});
+    } else if(bestDzen >= 4){
+      var nonDzen = days.filter(function(d){return !d.z;});
+      var avgND = nonDzen.length? avg(nonDzen.map(function(d){return d.m;})) : 0;
+      if(!nonDzen.length || bestDzen > avgND){
+        out.push({icon:"dzen", zen:true, text:"В дни с DZEN настроение выше. Мы даже не удивлены — это польза, за которую платят удовольствием."});
+      }
+    }
+  } else if(out.length){
+    out.push({icon:"dzen", zen:true, text:"Пока ни одного дня с DZEN. Единственная строчка в этом списке, где польза не требует терпеть."});
+  }
+  // DZEN-переворот всегда остаётся в списке и всегда последним (peak-end)
+  var zenCards = out.filter(function(x){return x.zen;});
+  var rest = out.filter(function(x){return !x.zen;});
+  return {teaser:0, list: rest.slice(0,3).concat(zenCards.slice(0,1))};
+}
+
+/* ============ ШЕРИНГ ============ */
+function weekDays(){
+  var e=entries(); var res=[];
+  for(var off=-6; off<=0; off++){
+    var k=keyOffset(off);
+    res.push(e[k] ? {m:e[k].m} : null);
+  }
+  return res;
+}
+function shareText(){
+  var grid = weekDays().map(function(d){ return d? MOOD_EMOJI[d.m-1] : "▫️"; }).join("");
+  var f = computeFindings();
+  var line = f.list.length ? f.list[0].text : "Первые находки — с трёх замеров.";
+  return "Моя неделя страданий ради здоровья:\n"+grid+"\n«"+line+"»\nСпорим, у тебя ровнее? DZEN · калькулятор страданий";
+}
+
+/* ============ РЕНДЕР ============ */
+var picked = {mood:0, habits:[], dzen:false};
+
+function $(id){ return document.getElementById(id); }
+function vibrate(){ try{ if(navigator.vibrate) navigator.vibrate(12); }catch(e){} }
+function showSection(id){
+  ["s-mood","s-habits","s-picture"].forEach(function(s){
+    $(s).classList.toggle("show", s===id);
+  });
+}
+function toast(msg){
+  var t=$("toast"); t.textContent=msg; t.classList.add("on");
+  setTimeout(function(){ t.classList.remove("on"); }, 2200);
+}
+function confetti(){
+  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var box=$("confetti"); box.innerHTML="";
+  var colors=["#A8C96B","#C0563E","#C2791B","#7A5C93","#56732E"];
+  for(var i=0;i<16;i++){
+    var s=document.createElement("i");
+    s.style.left="50%"; s.style.top="55%";
+    s.style.background=colors[i%colors.length];
+    s.style.setProperty("--dx",(Math.random()*260-130)+"px");
+    s.style.setProperty("--dy",(Math.random()*-220-40)+"px");
+    s.style.setProperty("--rot",(Math.random()*540-270)+"deg");
+    box.appendChild(s);
+  }
+  setTimeout(function(){ box.innerHTML=""; }, 1100);
+}
+function countUp(el, to, suffix){
+  var start=null, dur=900;
+  if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+    el.textContent=to+(suffix||""); return;
+  }
+  function step(ts){
+    if(!start) start=ts;
+    var p=Math.min(1,(ts-start)/dur);
+    p=1-Math.pow(1-p,3);
+    el.textContent=Math.round(to*p)+(suffix||"");
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function renderFaces(){
+  var box=$("faces"); box.innerHTML="";
+  MOODS.forEach(function(m){
+    var b=document.createElement("button");
+    b.className="face"; b.setAttribute("aria-label", m.label);
+    b.innerHTML=faceSVG(m.v)+"<span>"+m.label+"</span>";
+    b.addEventListener("click", function(){
+      vibrate();
+      picked.mood=m.v;
+      var all=box.querySelectorAll(".face");
+      for(var i=0;i<all.length;i++){
+        all[i].classList.toggle("picked", MOODS[i].v===m.v);
+        all[i].classList.toggle("dim", MOODS[i].v!==m.v);
+      }
+      setTimeout(function(){ showSection("s-habits"); }, 380);
+    });
+    box.appendChild(b);
+  });
+}
+
+function renderGrid(){
+  var box=$("grid"); box.innerHTML="";
+  var items=HABITS.concat([DZEN]);
+  items.forEach(function(hb){
+    var b=document.createElement("button");
+    b.className="tile"+(hb.id==="dzen"?" dzen":"");
+    var meta = hb.id==="dzen" ? "+ кайф, страданий 0" : "+"+hb.pain+" страданий";
+    b.innerHTML='<span class="check">'+CHECK+"</span>"+iconSVG(hb.id, hb.id==="dzen"?"#56732E":"#2B2A26")
+      +'<span class="t">'+hb.t+'</span><span class="p">'+meta+"</span>";
+    b.title=hb.s;
+    b.addEventListener("click", function(){
+      vibrate();
+      b.classList.toggle("sel");
+      if(hb.id==="dzen"){ picked.dzen=!picked.dzen; }
+      else{
+        var i=picked.habits.indexOf(hb.id);
+        if(i>=0) picked.habits.splice(i,1); else picked.habits.push(hb.id);
+      }
+    });
+    box.appendChild(b);
+  });
+}
+
+function goldenLine(entry){
+  if(entry.z && entry.h.length===0) return "Выдох. Наконец польза, за которую не пришлось страдать.";
+  var n=entry.h.length;
+  if(n===0) return "Пока ты просто живёшь. Ни пользы, ни боли.";
+  if(n<=2) return entry.z ? "Здоровье кивнуло, диван обиделся. А DZEN — единственное, что не пришлось терпеть." : "Здоровье кивнуло, диван обиделся.";
+  if(n<=4) return "Три подвига за день. Ты почти святой, только злой и голодный.";
+  return "Пять из пяти. Идеальный человек — и абсолютно вымотанный.";
+}
+
+function completeToday(){
+  var entry={m:picked.mood, h:picked.habits.slice(), z:picked.dzen};
+  state.entries[keyOffset(0)] = entry;
+  save(state);
+  vibrate(); confetti();
+  renderPicture(true);
+  showSection("s-picture");
+  if(document.scrollingElement) document.scrollingElement.scrollTop=0;
+}
+
+/* --- части картины --- */
+function renderTop(fresh){
+  var box=$("pictureTop");
+  var e=entries(); var today=e[keyOffset(0)];
+  if(fresh && today){
+    var pain=painOf(today);
+    var zen = pain===0 && today.z;
+    box.innerHTML='<div class="card"><h3>Вчера настрадал на</h3>'
+      +'<div class="bignum'+(zen?" zenlike":"")+'" id="bigPain">0</div>'
+      +'<p class="bigline">'+goldenLine(today)+"</p></div>";
+    var el=$("bigPain");
+    if(zen){ el.textContent="0"; }
+    else setTimeout(function(){ countUp(el, pain); }, 250);
+  } else if(today){
+    box.innerHTML='<div class="today-banner">Сегодня ты уже отметился — два тапа, как договаривались.<br>'
+      +'Новый квадратик откроется через <span class="countdown" id="cd"></span>.</div>';
+    startCountdown();
+  } else {
+    box.innerHTML="";
+  }
+}
+var cdTimer=null;
+function startCountdown(){
+  if(cdTimer) clearInterval(cdTimer);
+  function tick(){
+    var el=$("cd"); if(!el){ clearInterval(cdTimer); return; }
+    var now=new Date();
+    var mid=new Date(now); mid.setHours(24,0,0,0);
+    var s=Math.max(0, Math.floor((mid-now)/1000));
+    var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+    el.textContent=("0"+h).slice(-2)+":"+("0"+m).slice(-2)+":"+("0"+sec).slice(-2);
+  }
+  tick(); cdTimer=setInterval(tick,1000);
+}
+
+function renderStrip(){
+  var box=$("moodStrip"); box.innerHTML="";
+  var e=entries();
+  var DAYS=13;
+  for(var off=-DAYS; off<=0; off++){
+    var k=keyOffset(off);
+    var sq=document.createElement("span");
+    sq.className="sq";
+    sq.style.animationDelay=((off+DAYS)*0.03)+"s";
+    if(e[k]){ sq.classList.add("f"); sq.style.background=MOODS[e[k].m-1].color; }
+    if(off===0) sq.classList.add("today");
+    box.appendChild(sq);
+  }
+  var t=document.createElement("span");
+  t.className="sq tmrw"; t.title="завтра";
+  box.appendChild(t);
+  var from=new Date(); from.setDate(from.getDate()-DAYS);
+  $("stripFrom").textContent = from.getDate()+"."+("0"+(from.getMonth()+1)).slice(-2);
+}
+
+var chartRange=7;
+function renderChart(){
+  var box=$("chartBox");
+  var e=entries();
+  var days=[];
+  for(var off=-(chartRange-1); off<=0; off++){
+    var k=keyOffset(off);
+    days.push(e[k]? {m:e[k].m, p:painOf({h:e[k].h||[]})} : null);
+  }
+  var have=days.filter(function(d){return d;}).length;
+  if(have<2){
+    box.innerHTML='<p style="color:var(--muted);font-size:15px">График появится со второго замера. Пока тут тихо.</p>';
+    return;
+  }
+  var W=320, H=120, pad=6;
+  var n=days.length, maxP=10;
+  days.forEach(function(d){ if(d && d.p>maxP) maxP=d.p; });
+  var bw=Math.min(18,(W-pad*2)/n*0.55), step=(W-pad*2)/n;
+  var bars="", pts=[], dots="";
+  for(var i=0;i<n;i++){
+    var x=pad+step*i+step/2;
+    var d=days[i];
+    if(!d) continue;
+    var bh=(d.p/maxP)*(H-30);
+    bars+='<rect x="'+(x-bw/2)+'" y="'+(H-10-bh)+'" width="'+bw+'" height="'+Math.max(bh,1.5)+'" rx="4" fill="#C0563E" opacity=".38"/>';
+    var my=H-10-((d.m-1)/4)*(H-30);
+    pts.push(x+","+my);
+    dots+='<circle cx="'+x+'" cy="'+my+'" r="3.6" fill="#A8C96B" stroke="#56732E" stroke-width="1.4"/>';
+  }
+  var line = pts.length>1 ? '<polyline points="'+pts.join(" ")+'" fill="none" stroke="#A8C96B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' : "";
+  box.innerHTML='<svg viewBox="0 0 '+W+" "+H+'" width="100%" role="img" aria-label="График страданий и настроения">'
+    +'<line x1="'+pad+'" y1="'+(H-10)+'" x2="'+(W-pad)+'" y2="'+(H-10)+'" stroke="#DFDACE" stroke-width="1.5"/>'
+    +bars+line+dots+"</svg>";
+}
+
+function renderFindings(){
+  var box=$("findings"); box.innerHTML="";
+  var f=computeFindings();
+  var head=document.createElement("h3");
+  head.style.cssText="font-size:13px;letter-spacing:.14em;color:var(--muted);font-weight:600;text-transform:uppercase;margin:6px 4px 12px";
+  head.textContent="Находки";
+  box.appendChild(head);
+  if(f.teaser>0){
+    var n=f.teaser;
+    var card=document.createElement("div");
+    card.className="finding teaser";
+    card.innerHTML='<div class="fi">'+iconSVG("spark","#6E6A5F")+'</div><p>Ещё '+n+" замер"+(n===1?"":"а")+" — и появится первая находка о тебе. Мы уже кое-что подозреваем.</p>";
+    box.appendChild(card);
+    return;
+  }
+  if(!f.list.length){
+    var c2=document.createElement("div");
+    c2.className="finding teaser";
+    c2.innerHTML='<div class="fi">'+iconSVG("spark","#6E6A5F")+'</div><p>Закономерности пока прячутся. Пара честных замеров — и они выйдут сами.</p>';
+    box.appendChild(c2);
+    return;
+  }
+  f.list.forEach(function(fd, i){
+    var card=document.createElement("div");
+    card.className="finding"+(fd.zen?" zen":"");
+    card.style.animationDelay=(0.12*i)+"s";
+    card.innerHTML='<div class="fi">'+iconSVG(fd.icon, fd.zen?"#56732E":"#2B2A26")+"</div><p>"+fd.text+"</p>";
+    box.appendChild(card);
+  });
+}
+
+function renderShare(){
+  var box=$("shareStrip"); box.innerHTML="";
+  weekDays().forEach(function(d){
+    var sq=document.createElement("span");
+    sq.className="sq";
+    if(d){ sq.classList.add("f"); sq.style.background=MOODS[d.m-1].color; }
+    box.appendChild(sq);
+  });
+  var f=computeFindings();
+  $("shareFind").textContent = f.list.length ? "«"+f.list[0].text+"»" : "«Первые находки — с трёх замеров. Интрига.»";
+}
+
+function renderHook(){
+  var f=computeFindings();
+  var days=sortedDays().length;
+  var html;
+  if(f.teaser>0){
+    html="Завтра тут появится новый квадратик. <b>Ещё "+f.teaser+" замер"+(f.teaser===1?"":"а")+"</b> — и откроется первая находка о тебе.";
+  } else {
+    html="Завтра — новый квадратик и, возможно, новая находка. За "+days+" дн. картина уже складывается — <b>жалко бросать</b>.";
+  }
+  $("hook").innerHTML=html;
+}
+
+function renderStreak(){
+  var n=streak();
+  var chip=$("streakChip");
+  if(n>=2){ chip.textContent=n+" дн. подряд"; chip.classList.add("on"); }
+  else chip.classList.remove("on");
+}
+
+function renderPicture(fresh){
+  renderTop(fresh);
+  renderStrip();
+  renderChart();
+  renderFindings();
+  renderShare();
+  renderHook();
+  renderStreak();
+}
+
+/* ============ ДЕМО ============ */
+function buildDemo(){
+  var d={};
+  d[keyOffset(-6)]={m:2,h:["gym"],z:false};
+  d[keyOffset(-5)]={m:3,h:["sleep","phone"],z:false};
+  d[keyOffset(-4)]={m:2,h:["gym","wb"],z:false};
+  d[keyOffset(-3)]={m:3,h:["sweets","sleep"],z:false};
+  d[keyOffset(-2)]={m:2,h:["gym","phone"],z:false};
+  d[keyOffset(-1)]={m:5,h:["sweets","sleep"],z:true};
+  return d;
+}
+function toggleDemo(){
+  demo=!demo;
+  if(demo && !demoEntries) demoEntries=buildDemo();
+  $("demoChip").hidden=!demo;
+  $("tmBtn").textContent = demo
+    ? "выйти из демо (вернуть мои настоящие данные)"
+    : "машина времени: показать, как будет через неделю (демо)";
+  renderPicture(false);
+  if(demo){ showSection("s-picture"); toast("Демо: так выглядит твоя неделя"); }
+  else if(!entries()[keyOffset(0)]) showSection("s-mood");
+}
+
+/* ============ СТАРТ ============ */
+function init(){
+  renderFaces();
+  renderGrid();
+
+  $("doneBtn").addEventListener("click", function(){
+    if(!picked.mood){ showSection("s-mood"); return; }
+    completeToday();
+  });
+  $("noneBtn").addEventListener("click", function(){
+    picked.habits=[]; picked.dzen=false;
+    var tiles=$("grid").querySelectorAll(".tile");
+    for(var i=0;i<tiles.length;i++) tiles[i].classList.remove("sel");
+    completeToday();
+  });
+  $("tab7").addEventListener("click", function(){
+    chartRange=7; $("tab7").classList.add("on"); $("tab30").classList.remove("on"); renderChart();
+  });
+  $("tab30").addEventListener("click", function(){
+    chartRange=30; $("tab30").classList.add("on"); $("tab7").classList.remove("on"); renderChart();
+  });
+  $("shareBtn").addEventListener("click", function(){
+    vibrate();
+    var text=shareText();
+    if(navigator.share){
+      navigator.share({text:text}).catch(function(){});
+    } else if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast("Скопировано — вставь в чат"); },
+        function(){ toast("Сделай скриншот карточки выше"); });
+    } else toast("Сделай скриншот карточки выше");
+  });
+  $("tmBtn").addEventListener("click", toggleDemo);
+
+  if(state.entries[keyOffset(0)]){
+    renderPicture(false);
+    showSection("s-picture");
+  } else {
+    showSection("s-mood");
+  }
+}
+if(typeof document!=="undefined") init();
+</script>
+</body>
+</html>
